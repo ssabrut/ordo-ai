@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "agent",
+            "if": "Bash(git commit*)",
+            "prompt": "A git commit just ran in this repo. Read .claude/skills/changelog/SKILL.md and apply its rules to log this commit into CHANGELOG.md at the repo root. Use `git log -1 --pretty=%s` and `git show --stat HEAD` to inspect the commit. Skip logging entirely if the commit is a pure dependency/lockfile bump, formatting/lint-only change, or other change with no user-visible effect, per the skill's exclusion rules. Hook input: $ARGUMENTS",
+            "timeout": 90,
+            "statusMessage": "Logging commit to CHANGELOG.md..."
+          }
+        ]
+      }
+    ]
+  }
+}
