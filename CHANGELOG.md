@@ -17,7 +17,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `clipped_sample_ratio(audio_int16)`: returns fraction of int16 PCM samples at or beyond `INT16_CLIP_VALUE = 32767`. `stream_transcribe_with_wakeword` warns (does not reject) when ratio exceeds `CLIP_RATIO_WARN_THRESHOLD = 0.001` (0.1%), since Whisper transcribes clipped/hot-gain audio fluently but confidently wrong.
 - Dataset loader and evaluation routine for speech-to-text accuracy testing.
 - Real-time speech-to-text streaming using faster-whisper.
+- `notebooks/2_text_normalization.ipynb`: three-step text normalization pipeline for NER preprocessing — `remove_punctuation` (strips non-word/non-space chars via regex), `remove_fillers` (drops disfluency markers from a `FILLERS` list: "jadi gini", "jadi begini", "gimana ya", "apa ya", "anu", "em", "eh", "hmm"), and `normalize_numbers` (converts digit sequences to Indonesian words via `num2words(..., lang="id")`), composed in `normalize(text)`. Runs over `data/synthetic_id_formal_informal.jsonl` (510 rows), writes `data/synthetic_id_formal_informal_normalized.jsonl` with a `text_normalized` field added per record; 490/510 rows changed by normalization.
 
 ### Fixed
 - Pin `onnxruntime` to 1.18.1; newer versions silently broke openWakeWord's ONNX models (loaded inside `make_wakeword_recorder`), leaving wake word scores stuck near zero even on clear speech.
 - `stream_transcribe_with_wakeword` re-arms wake-word listening (`emit(f"listening for wake word ({WAKE_WORD})...")`) after each utterance in `on_final`, instead of the recorder going quiet after one detection.
+
+### Removed
+- FLEURS batch transcription cells (`load_dataset`/`WhisperModel` loop and `fleurs_validation_transcripts.jsonl` output) from `notebooks/1_speech_to_text.ipynb` — batch transcription now lives in its own pipeline, separate from the live mic/wakeword notebook.
