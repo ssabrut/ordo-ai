@@ -33,7 +33,7 @@ Only include section headers (`### Added` etc.) that have at least one bullet.
 
 ## Source of truth
 
-Diff against last logged state: `git log` since last changelog update, or current staged/unstaged diff if asked to log "this change" directly. Read commit messages + diffstat, not full diffs, to determine intent.
+Diff against last logged state: `git log` since last changelog update, or current staged/unstaged diff if asked to log "this change" directly. Read commit messages + diffstat to determine intent, then read the **full diff** (not just diffstat) to pull concrete function/class/variable names for the bullet body. For notebooks (`.ipynb`), diff cell `source` arrays directly (e.g. parse JSON, compare per-cell), not the raw git diff — notebook JSON diffs are unreadable noise (metadata, execution_count, outputs).
 
 ## Section mapping (commit type → section)
 
@@ -51,8 +51,10 @@ Skip entirely: pure deps/lockfile bumps, formatting/lint-only commits, merge com
 
 - One bullet = one logical change. Squash multiple related commits into a single bullet.
 - Present tense, imperative: "Add wake word detection", not "Added wake word detection".
-- State what changed + impact. Add why only if non-obvious (hidden constraint, bug root cause, breaking rationale).
-- No issue/PR numbers, no file paths — those belong in git history, not changelog.
+- **Be technical, not just user-facing.** Name the actual function/class/variable touched, with signature where useful: `` `find_input_device_index(name_substring)`: resolves a PyAudio input device index by substring match `` — not "Improve audio input handling". For renamed/replaced functions, name both old and new (e.g. "replaces the prior `stream_transcribe` loop").
+- For non-trivial logic (race conditions, threshold constants, callback wiring), state the mechanism: which callback fires, which flag guards it, what constant gates the behavior (e.g. `CLIP_RATIO_WARN_THRESHOLD = 0.001`).
+- State what changed + impact. Add why only if non-obvious (hidden constraint, bug root cause, breaking rationale, prior race/bug this fixes).
+- No issue/PR numbers — those belong in git history, not changelog. File paths only when there are multiple files and the function name alone is ambiguous.
 - Flag breaking changes explicitly with `**BREAKING:**` prefix.
 
 ## Placement
