@@ -5,6 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 ### Added
+- `data/synthetic_id_formal_informal.jsonl`: 510 synthetic Indonesian restaurant-table utterances (`id`, `text`, `style`: formal/informal, `domain`: restoran), 255/255 formal-informal split, covering order placement, order changes/cancellations, and formal disfluency markers (e.g. "anu", "em", "jadi gini"); quantities mixed digit and word forms ("2 porsi" / "dua porsi"). Scoped to post-seating table interactions only (no reservation/payment/complaint utterances).
 - Batch FLEURS (`google/fleurs`, `id_id` validation split) transcription cell: loads dataset via `load_dataset(..., split="validation")` with `Audio(decode=False)`, runs each sample through a separate `WhisperModel("large-v3-turbo", device=device, compute_type=compute_type)` instance, and writes `id`/`audio_path`/`reference`/`hypothesis` records to `data/fleurs_validation_transcripts.jsonl` for offline accuracy/normalization scoring against ground truth.
 - Cell to persist `wakeword_debug_log` entries as newline-delimited JSON to `data/transcripts.jsonl` (append mode), capturing live wake-word transcription runs for later evaluation.
 - `find_input_device_index(name_substring)`: resolves a PyAudio input device index by case-insensitive substring match against device name (e.g. `"MacBook Pro Microphone"`); raises `ValueError` if no match. Bound to `MACBOOK_MIC_INDEX` and passed as `input_device_index` everywhere a recorder is constructed.
