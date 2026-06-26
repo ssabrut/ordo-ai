@@ -29,6 +29,8 @@ dependencies = [
     "black[jupyter] (>=26.5.1,<27.0.0)",
     "isort[jupyter] (>=8.0.1,<9.0.0)",
     "scikit-learn (>=1.9.0,<2.0.0)",
+    "langgraph (>=0.2.0,<1.0.0)",
+    "pydantic-settings (>=2.0.0,<3.0.0)",
 ]
 
 

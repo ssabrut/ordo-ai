@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "main": "./src/ordo_ai/graphs/main_graph.py:graph"
+  },
+  "env": ".env"
+}
