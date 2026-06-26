@@ -1,0 +1,135 @@
+{
+  "categories": [
+    {
+      "category": "Makanan",
+      "menus": [
+        {
+          "id": "d00000000000000000000003",
+          "restaurant_id": "b00000000000000000000001",
+          "name": "Ayam Bakar",
+          "category": "Makanan",
+          "description": "Ayam bakar bumbu kecap manis",
+          "price": 30000,
+          "image_url": null,
+          "available": true,
+          "make_duration": 15
+        },
+        {
+          "id": "d0000000000000000000000a",
+          "restaurant_id": "b00000000000000000000001",
+          "name": "Ayam Goreng",
+          "category": "Makanan",
+          "description": "Ayam goreng renyah bumbu kuning",
+          "price": 28000,
+          "image_url": null,
+          "available": true,
+          "make_duration": null
+        },
+        {
+          "id": "d00000000000000000000002",
+          "restaurant_id": "b00000000000000000000001",
+          "name": "Mie Ayam Bakso",
+          "category": "Makanan",
+          "description": "Mie ayam dengan bakso sapi pilihan",
+          "price": 20000,
+          "image_url": null,
+          "available": true,
+          "make_duration": 8
+        },
+        {
+          "id": "d00000000000000000000009",
+          "restaurant_id": "b00000000000000000000001",
+          "name": "Mie Goreng Spesial",
+          "category": "Makanan",
+          "description": "Mie goreng dengan ayam, telur, dan sayuran",
+          "price": 22000,
+          "image_url": null,
+          "available": true,
+          "make_duration": null
+        },
+        {
+          "id": "d00000000000000000000007",
+          "restaurant_id": "b00000000000000000000001",
+          "name": "Nasi Goreng Ikan Asin",
+          "category": "Makanan",
+          "description": "Nasi goreng dengan ikan asin dan telur ceplok",
+          "price": 27000,
+          "image_url": null,
+          "available": true,
+          "make_duration": null
+        },
+        {
+          "id": "d00000000000000000000008",
+          "restaurant_id": "b00000000000000000000001",
+          "name": "Nasi Goreng Seafood",
+          "category": "Makanan",
+          "description": "Nasi goreng dengan udang, cumi, dan sayuran",
+          "price": 32000,
+          "image_url": null,
+          "available": true,
+          "make_duration": null
+        },
+        {
+          "id": "d00000000000000000000001",
+          "restaurant_id": "b00000000000000000000001",
+          "name": "Nasi Goreng Spesial",
+          "category": "Makanan",
+          "description": "Nasi goreng dengan telur, ayam, dan sayuran",
+          "price": 25000,
+          "image_url": null,
+          "available": true,
+          "make_duration": 10
+        }
+      ]
+    },
+    {
+      "category": "Minuman",
+      "menus": [
+        {
+          "id": "d0000000000000000000000b",
+          "restaurant_id": "b00000000000000000000001",
+          "name": "Es Jeruk",
+          "category": "Minuman",
+          "description": "Jeruk peras segar dengan es",
+          "price": 6000,
+          "image_url": null,
+          "available": true,
+          "make_duration": null
+        },
+        {
+          "id": "d00000000000000000000005",
+          "restaurant_id": "b00000000000000000000001",
+          "name": "Es Teh Manis",
+          "category": "Minuman",
+          "description": null,
+          "price": 5000,
+          "image_url": null,
+          "available": true,
+          "make_duration": 2
+        },
+        {
+          "id": "d00000000000000000000006",
+          "restaurant_id": "b00000000000000000000001",
+          "name": "Jus Alpukat",
+          "category": "Minuman",
+          "description": "Jus alpukat segar dengan susu",
+          "price": 15000,
+          "image_url": null,
+          "available": true,
+          "make_duration": 5
+        },
+        {
+          "id": "d0000000000000000000000c",
+          "restaurant_id": "b00000000000000000000001",
+          "name": "Jus Mangga",
+          "category": "Minuman",
+          "description": "Jus mangga manis segar",
+          "price": 13000,
+          "image_url": null,
+          "available": true,
+          "make_duration": null
+        }
+      ]
+    }
+  ]
+}
