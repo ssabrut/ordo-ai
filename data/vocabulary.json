@@ -1,0 +1,42 @@
+{
+  "filled_pauses": [
+    "anu",
+    "ee",
+    "eee",
+    "eh",
+    "hm",
+    "hmm",
+    "mm",
+    "uh",
+    "um"
+  ],
+  "repair_bridges": [
+    "sebenarnya",
+    "sebenernya",
+    "maksudnya",
+    "pokoknya",
+    "intinya",
+    "soalnya",
+    "bukan",
+    "maaf",
+    "wait"
+  ],
+  "discourse_markers": [
+    "yaudah",
+    "dong",
+    "gitu",
+    "nih",
+    "aja",
+    "deh",
+    "sih",
+    "ya"
+  ],
+  "partial_word_re": "^[a-zA-Z]+-$",
+  "metadata": {
+    "n_corpus_sentences": 1100,
+    "n_tokens_analyzed": 299,
+    "pmi_threshold": 2.5,
+    "entropy_threshold": 1.2,
+    "min_freq": 5
+  }
+}
