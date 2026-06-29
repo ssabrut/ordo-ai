@@ -35,6 +35,9 @@ dependencies = [
 ]
 
 
+[tool.poetry]
+packages = [{include = "ordo_ai", from = "src"}]
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
