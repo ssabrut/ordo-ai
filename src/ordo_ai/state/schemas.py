@@ -8,6 +8,14 @@ class EntitySpan(TypedDict):
     end: int
 
 
+class CartItem(TypedDict):
+    menu_id: str
+    name: str
+    price: int
+    quantity: int
+    notes: list[str]
+
+
 class OrderState(TypedDict, total=False):
     audio: bytes
     raw_text: str
@@ -20,3 +28,5 @@ class OrderState(TypedDict, total=False):
     intent_probs: dict[str, float]
     needs_clarification: bool
     clarification_message: str
+    cart: list[CartItem]
+    agent_response: str

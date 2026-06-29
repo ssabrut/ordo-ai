@@ -1,0 +1,123 @@
+from ordo_ai.state.schemas import CartItem, EntitySpan, OrderState
+from ordo_ai.tools.menu import find_menu_item
+
+_NUMBER_WORDS = {
+    "satu": 1,
+    "dua": 2,
+    "tiga": 3,
+    "empat": 4,
+    "lima": 5,
+    "enam": 6,
+    "tujuh": 7,
+    "delapan": 8,
+    "sembilan": 9,
+    "sepuluh": 10,
+}
+
+
+def _parse_quantity(text: str) -> int:
+    text = text.lower().strip()
+    if text.isdigit():
+        return int(text)
+    return _NUMBER_WORDS.get(text, 1)
+
+
+def _group_entities(entities: list[EntitySpan]) -> list[dict]:
+    """Attach each DISH/DRINK/REMOVE span to its nearest QUANTITY/MODIFIER spans (qty
+    can precede, e.g. "dua nasi goreng", or follow, e.g. "nasi goreng dua porsi").
+    """
+    spans = sorted(entities, key=lambda e: e["start"])
+    anchors = [
+        i for i, e in enumerate(spans) if e["label"] in ("DISH", "DRINK", "REMOVE")
+    ]
+    if not anchors:
+        return []
+
+    items = [
+        {
+            "name": spans[i]["text"],
+            "label": spans[i]["label"],
+            "quantity": 1,
+            "notes": [],
+        }
+        for i in anchors
+    ]
+
+    for i, ent in enumerate(spans):
+        if ent["label"] not in ("QUANTITY", "MODIFIER", "ADD_ON", "SIZE"):
+            continue
+        nearest = min(range(len(anchors)), key=lambda k: abs(anchors[k] - i))
+        if ent["label"] == "QUANTITY":
+            items[nearest]["quantity"] = _parse_quantity(ent["text"])
+        else:
+            items[nearest]["notes"].append(ent["text"])
+
+    return items
+
+
+def _find_cart_index(cart: list[CartItem], name: str) -> int | None:
+    for idx, item in enumerate(cart):
+        if item["name"].lower() == name.lower():
+            return idx
+    return None
+
+
+def run(state: OrderState) -> OrderState:
+    intent = state["intent"]
+    cart = list(state.get("cart", []))
+    parsed_items = _group_entities(state.get("entities", []))
+
+    if intent == "order_cancel":
+        cart = []
+        return {"cart": cart, "agent_response": "Pesanan dibatalkan."}
+
+    if not parsed_items:
+        return {
+            "cart": cart,
+            "agent_response": "Maaf, saya tidak menangkap item pesanan Anda.",
+        }
+
+    responses = []
+    for parsed in parsed_items:
+        menu_item = find_menu_item(parsed["name"])
+
+        if intent == "order_remove_item" or parsed["label"] == "REMOVE":
+            if menu_item:
+                idx = _find_cart_index(cart, menu_item["name"])
+                if idx is not None:
+                    cart.pop(idx)
+                    responses.append(f"{menu_item['name']} dihapus dari pesanan.")
+                    continue
+            responses.append(f"{parsed['name']} tidak ditemukan di pesanan.")
+            continue
+
+        if not menu_item:
+            responses.append(f"Maaf, menu '{parsed['name']}' tidak tersedia.")
+            continue
+
+        idx = _find_cart_index(cart, menu_item["name"])
+        if intent == "order_modify_quantity" and idx is not None:
+            cart[idx]["quantity"] = parsed["quantity"]
+            responses.append(
+                f"Jumlah {menu_item['name']} diubah menjadi {parsed['quantity']}."
+            )
+        elif idx is not None:
+            cart[idx]["quantity"] += parsed["quantity"]
+            responses.append(
+                f"{menu_item['name']} ditambah {parsed['quantity']}, total {cart[idx]['quantity']}."
+            )
+        else:
+            cart.append(
+                {
+                    "menu_id": menu_item["id"],
+                    "name": menu_item["name"],
+                    "price": menu_item["price"],
+                    "quantity": parsed["quantity"],
+                    "notes": parsed["notes"],
+                }
+            )
+            responses.append(
+                f"{menu_item['name']} x{parsed['quantity']} ditambahkan ke pesanan."
+            )
+
+    return {"cart": cart, "agent_response": " ".join(responses)}
