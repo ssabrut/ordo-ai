@@ -1998,3 +1998,63 @@
 {"id": 1998, "text": "gila gue baru abis benerin sofa, busanya udah kempes banget", "intent": "chitchat_oos", "domain": "restoran", "text_normalized": "gila gue baru abis benerin sofa busanya udah kempes banget"}
 {"id": 1999, "text": "lo udah pernah coba terapi pijat refleksi belum sih, enak gak", "intent": "chitchat_oos", "domain": "restoran", "text_normalized": "lo udah pernah coba terapi pijat refleksi belum sih enak gak"}
 {"id": 2000, "text": "eh kak ini ada area outdoor yang bisa buat acara kecil gak ya", "intent": "chitchat_oos", "domain": "restoran", "text_normalized": "eh kak ini ada area outdoor yang bisa buat acara kecil gak ya"}
+{"id": 2001, "text": "mbak, gue pesen jus alpukat satu, eh, dua porsi pak", "intent": "order_create", "domain": "restoran", "text_normalized": "mbak gue pesen jus alpukat satu eh dua porsi pak"}
+{"id": 2002, "text": "mas, gue mau pesen nasi goreng seafood dua, eh, tiga mangkok", "intent": "order_create", "domain": "restoran", "text_normalized": "mas gue mau pesen nasi goreng seafood dua eh tiga mangkok"}
+{"id": 2003, "text": "mbak, pesenin gue ayam bakar satu, eh, dua porsi ya bang", "intent": "order_create", "domain": "restoran", "text_normalized": "mbak pesenin gue ayam bakar satu eh dua porsi ya bang"}
+{"id": 2004, "text": "pak, gue pesen es teh manis empat, eh, tiga mangkok ya kak", "intent": "order_create", "domain": "restoran", "text_normalized": "pak gue pesen es teh manis empat eh tiga mangkok ya kak"}
+{"id": 2005, "text": "mas, mau pesen mie ayam bakso empat, eh, tiga gelas pak", "intent": "order_create", "domain": "restoran", "text_normalized": "mas mau pesen mie ayam bakso empat eh tiga gelas pak"}
+{"id": 2006, "text": "bu, mau pesen nasi goreng seafood dua, eh, tiga gelas ya kak", "intent": "order_create", "domain": "restoran", "text_normalized": "bu mau pesen nasi goreng seafood dua eh tiga gelas ya kak"}
+{"id": 2007, "text": "bu, gue mau pesen ayam goreng tiga, eh, dua porsi aja", "intent": "order_create", "domain": "restoran", "text_normalized": "bu gue mau pesen ayam goreng tiga eh dua porsi aja"}
+{"id": 2008, "text": "mas, gue mau pesen ayam goreng satu, eh, tiga mangkok ya bang", "intent": "order_create", "domain": "restoran", "text_normalized": "mas gue mau pesen ayam goreng satu eh tiga mangkok ya bang"}
+{"id": 2009, "text": "gue pesen jus alpukat empat, eh, tiga porsi ya kak", "intent": "order_create", "domain": "restoran", "text_normalized": "gue pesen jus alpukat empat eh tiga porsi ya kak"}
+{"id": 2010, "text": "mbak, mau pesen nasi goreng seafood empat, eh, tiga gelas ya bang", "intent": "order_create", "domain": "restoran", "text_normalized": "mbak mau pesen nasi goreng seafood empat eh tiga gelas ya bang"}
+{"id": 2011, "text": "bu, gue mau pesen mie goreng spesial dua, eh, satu gelas ya bang", "intent": "order_create", "domain": "restoran", "text_normalized": "bu gue mau pesen mie goreng spesial dua eh satu gelas ya bang"}
+{"id": 2012, "text": "bang, pesenin gue jus alpukat dua, eh, satu porsi aja", "intent": "order_create", "domain": "restoran", "text_normalized": "bang pesenin gue jus alpukat dua eh satu porsi aja"}
+{"id": 2013, "text": "mbak, gue mau pesen jus alpukat dua, eh, satu mangkok ya kak", "intent": "order_create", "domain": "restoran", "text_normalized": "mbak gue mau pesen jus alpukat dua eh satu mangkok ya kak"}
+{"id": 2014, "text": "bu, gue pesen nasi goreng spesial lima, eh, empat gelas", "intent": "order_create", "domain": "restoran", "text_normalized": "bu gue pesen nasi goreng spesial lima eh empat gelas"}
+{"id": 2015, "text": "mbak, pesenin gue mie goreng spesial tiga, eh, dua porsi ya bang", "intent": "order_create", "domain": "restoran", "text_normalized": "mbak pesenin gue mie goreng spesial tiga eh dua porsi ya bang"}
+{"id": 2016, "text": "bu, pesenin gue ayam goreng dua, eh, satu porsi ya bang", "intent": "order_create", "domain": "restoran", "text_normalized": "bu pesenin gue ayam goreng dua eh satu porsi ya bang"}
+{"id": 2017, "text": "mas, pesenin gue mie ayam bakso dua, eh, satu gelas dong", "intent": "order_create", "domain": "restoran", "text_normalized": "mas pesenin gue mie ayam bakso dua eh satu gelas dong"}
+{"id": 2018, "text": "bu, pesenin gue nasi goreng spesial tiga, eh, empat porsi ya kak", "intent": "order_create", "domain": "restoran", "text_normalized": "bu pesenin gue nasi goreng spesial tiga eh empat porsi ya kak"}
+{"id": 2019, "text": "bu, mau pesen nasi goreng seafood lima, eh, empat gelas dong", "intent": "order_create", "domain": "restoran", "text_normalized": "bu mau pesen nasi goreng seafood lima eh empat gelas dong"}
+{"id": 2020, "text": "mas, mau pesen nasi goreng spesial dua, eh, tiga mangkok ya kak", "intent": "order_create", "domain": "restoran", "text_normalized": "mas mau pesen nasi goreng spesial dua eh tiga mangkok ya kak"}
+{"id": 2021, "text": "bu, mau pesen ayam goreng tiga, eh, empat gelas", "intent": "order_create", "domain": "restoran", "text_normalized": "bu mau pesen ayam goreng tiga eh empat gelas"}
+{"id": 2022, "text": "mbak, gue pesen nasi goreng ikan asin dua, eh, tiga mangkok ya kak", "intent": "order_create", "domain": "restoran", "text_normalized": "mbak gue pesen nasi goreng ikan asin dua eh tiga mangkok ya kak"}
+{"id": 2023, "text": "mas, gue mau pesen mie goreng spesial satu, eh, dua porsi aja", "intent": "order_create", "domain": "restoran", "text_normalized": "mas gue mau pesen mie goreng spesial satu eh dua porsi aja"}
+{"id": 2024, "text": "mas, gue mau pesen mie goreng spesial dua, eh, satu gelas pak", "intent": "order_create", "domain": "restoran", "text_normalized": "mas gue mau pesen mie goreng spesial dua eh satu gelas pak"}
+{"id": 2025, "text": "bu, pesenin gue es teh manis tiga, eh, empat porsi ya bang", "intent": "order_create", "domain": "restoran", "text_normalized": "bu pesenin gue es teh manis tiga eh empat porsi ya bang"}
+{"id": 2026, "text": "pak, gue pesen nasi goreng ikan asin lima, eh, empat gelas dong", "intent": "order_create", "domain": "restoran", "text_normalized": "pak gue pesen nasi goreng ikan asin lima eh empat gelas dong"}
+{"id": 2027, "text": "mas, pesenin gue ayam goreng satu, eh, tiga gelas dong", "intent": "order_create", "domain": "restoran", "text_normalized": "mas pesenin gue ayam goreng satu eh tiga gelas dong"}
+{"id": 2028, "text": "bu, gue pesen ayam bakar dua, eh, tiga porsi", "intent": "order_create", "domain": "restoran", "text_normalized": "bu gue pesen ayam bakar dua eh tiga porsi"}
+{"id": 2029, "text": "mas, gue mau pesen ayam bakar dua, eh, tiga porsi pak", "intent": "order_create", "domain": "restoran", "text_normalized": "mas gue mau pesen ayam bakar dua eh tiga porsi pak"}
+{"id": 2030, "text": "mbak, pesenin gue mie goreng spesial dua, eh, satu porsi ya bang", "intent": "order_create", "domain": "restoran", "text_normalized": "mbak pesenin gue mie goreng spesial dua eh satu porsi ya bang"}
+{"id": 2031, "text": "gue mau pesen e- es jeruk tiga porsi dong", "intent": "order_create", "domain": "restoran", "text_normalized": "gue mau pesen e es jeruk tiga porsi dong"}
+{"id": 2032, "text": "kak, pesenin gue e- es teh manis satu gelas", "intent": "order_create", "domain": "restoran", "text_normalized": "kak pesenin gue e es teh manis satu gelas"}
+{"id": 2033, "text": "pak, pesenin gue mi- mie goreng spesial dua gelas aja", "intent": "order_create", "domain": "restoran", "text_normalized": "pak pesenin gue mi mie goreng spesial dua gelas aja"}
+{"id": 2034, "text": "mbak, gue mau pesen ju- jus alpukat satu porsi aja", "intent": "order_create", "domain": "restoran", "text_normalized": "mbak gue mau pesen ju jus alpukat satu porsi aja"}
+{"id": 2035, "text": "mbak, gue pesen ay- ayam bakar tiga porsi aja", "intent": "order_create", "domain": "restoran", "text_normalized": "mbak gue pesen ay ayam bakar tiga porsi aja"}
+{"id": 2036, "text": "gue pesen ay- ayam goreng satu gelas ya kak", "intent": "order_create", "domain": "restoran", "text_normalized": "gue pesen ay ayam goreng satu gelas ya kak"}
+{"id": 2037, "text": "gue mau pesen e- es jeruk satu porsi ya bang", "intent": "order_create", "domain": "restoran", "text_normalized": "gue mau pesen e es jeruk satu porsi ya bang"}
+{"id": 2038, "text": "gue mau pesen aya- ayam bakar dua porsi aja", "intent": "order_create", "domain": "restoran", "text_normalized": "gue mau pesen aya ayam bakar dua porsi aja"}
+{"id": 2039, "text": "bang, gue pesen mi- mie ayam bakso satu porsi aja", "intent": "order_create", "domain": "restoran", "text_normalized": "bang gue pesen mi mie ayam bakso satu porsi aja"}
+{"id": 2040, "text": "mbak, gue mau pesen e- es teh manis dua gelas ya bang", "intent": "order_create", "domain": "restoran", "text_normalized": "mbak gue mau pesen e es teh manis dua gelas ya bang"}
+{"id": 2041, "text": "bang, pesenin gue ay- ayam goreng satu porsi dong", "intent": "order_create", "domain": "restoran", "text_normalized": "bang pesenin gue ay ayam goreng satu porsi dong"}
+{"id": 2042, "text": "bu, gue mau pesen na- nasi goreng spesial tiga porsi aja", "intent": "order_create", "domain": "restoran", "text_normalized": "bu gue mau pesen na nasi goreng spesial tiga porsi aja"}
+{"id": 2043, "text": "pesenin gue na- nasi goreng seafood satu porsi dong", "intent": "order_create", "domain": "restoran", "text_normalized": "pesenin gue na nasi goreng seafood satu porsi dong"}
+{"id": 2044, "text": "bu, pesenin gue ay- ayam bakar satu gelas dong", "intent": "order_create", "domain": "restoran", "text_normalized": "bu pesenin gue ay ayam bakar satu gelas dong"}
+{"id": 2045, "text": "mbak, gue pesen nas- nasi goreng spesial satu mangkok aja", "intent": "order_create", "domain": "restoran", "text_normalized": "mbak gue pesen nas nasi goreng spesial satu mangkok aja"}
+{"id": 2046, "text": "mbak, gue pesen ju- jus alpukat dua mangkok pak", "intent": "order_create", "domain": "restoran", "text_normalized": "mbak gue pesen ju jus alpukat dua mangkok pak"}
+{"id": 2047, "text": "mas, gue mau pesen ju- jus alpukat dua mangkok aja", "intent": "order_create", "domain": "restoran", "text_normalized": "mas gue mau pesen ju jus alpukat dua mangkok aja"}
+{"id": 2048, "text": "mbak, pesenin gue e- es teh manis tiga mangkok", "intent": "order_create", "domain": "restoran", "text_normalized": "mbak pesenin gue e es teh manis tiga mangkok"}
+{"id": 2049, "text": "bang, gue mau pesen e- es jeruk satu gelas ya", "intent": "order_create", "domain": "restoran", "text_normalized": "bang gue mau pesen e es jeruk satu gelas ya"}
+{"id": 2050, "text": "pesenin gue aya- ayam goreng dua porsi ya kak", "intent": "order_create", "domain": "restoran", "text_normalized": "pesenin gue aya ayam goreng dua porsi ya kak"}
+{"id": 2051, "text": "mas, pesenin gue ju- jus alpukat satu mangkok ya bang", "intent": "order_create", "domain": "restoran", "text_normalized": "mas pesenin gue ju jus alpukat satu mangkok ya bang"}
+{"id": 2052, "text": "bang, gue pesen na- nasi goreng ikan asin satu gelas", "intent": "order_create", "domain": "restoran", "text_normalized": "bang gue pesen na nasi goreng ikan asin satu gelas"}
+{"id": 2053, "text": "pak, pesenin gue ju- jus mangga tiga porsi ya", "intent": "order_create", "domain": "restoran", "text_normalized": "pak pesenin gue ju jus mangga tiga porsi ya"}
+{"id": 2054, "text": "pak, gue mau pesen ay- ayam goreng dua mangkok ya", "intent": "order_create", "domain": "restoran", "text_normalized": "pak gue mau pesen ay ayam goreng dua mangkok ya"}
+{"id": 2055, "text": "pak, gue mau pesen mi- mie ayam bakso satu gelas", "intent": "order_create", "domain": "restoran", "text_normalized": "pak gue mau pesen mi mie ayam bakso satu gelas"}
+{"id": 2056, "text": "mas, pesenin gue aya- ayam goreng tiga porsi aja", "intent": "order_create", "domain": "restoran", "text_normalized": "mas pesenin gue aya ayam goreng tiga porsi aja"}
+{"id": 2057, "text": "bu, gue pesen na- nasi goreng seafood tiga porsi pak", "intent": "order_create", "domain": "restoran", "text_normalized": "bu gue pesen na nasi goreng seafood tiga porsi pak"}
+{"id": 2058, "text": "bang, gue pesen e- es jeruk dua porsi pak", "intent": "order_create", "domain": "restoran", "text_normalized": "bang gue pesen e es jeruk dua porsi pak"}
+{"id": 2059, "text": "mas, pesenin gue na- nasi goreng spesial satu gelas ya bang", "intent": "order_create", "domain": "restoran", "text_normalized": "mas pesenin gue na nasi goreng spesial satu gelas ya bang"}
+{"id": 2060, "text": "gue mau pesen mi- mie goreng spesial dua mangkok dong", "intent": "order_create", "domain": "restoran", "text_normalized": "gue mau pesen mi mie goreng spesial dua mangkok dong"}
