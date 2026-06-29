@@ -1,7 +1,10 @@
+import logging
 from typing import Literal
 
 from ordo_ai.config import get_settings
 from ordo_ai.state.schemas import OrderState
+
+logger = logging.getLogger(__name__)
 
 AgentName = Literal["order_agent", "menu_agent", "dialog_agent", "fallback_agent"]
 
@@ -27,14 +30,18 @@ def route_on_confidence(state: OrderState) -> Literal["confident", "low_confiden
 
 
 def route_to_agent(state: OrderState) -> AgentName:
-    return _INTENT_TO_AGENT.get(state["intent"], "fallback_agent")
+    agent = _INTENT_TO_AGENT.get(state["intent"], "fallback_agent")
+    logger.debug("router: intent=%r -> agent=%r", state["intent"], agent)
+    return agent
 
 
 def clarify(state: OrderState) -> OrderState:
-    return {
+    result = {
         "needs_clarification": True,
         "clarification_message": (
             f"Maaf, saya tidak yakin maksud Anda (intent={state['intent']!r}, "
             f"confidence={state['intent_confidence']:.2f}). Bisa diulang?"
         ),
     }
+    logger.debug("clarify: %r", result)
+    return result

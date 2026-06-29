@@ -1,8 +1,11 @@
+import logging
 import re
 
 from num2words import num2words
 
 from ordo_ai.state.schemas import OrderState
+
+logger = logging.getLogger(__name__)
 
 _PUNCT_PATTERN = re.compile(r"[^\w\s]")
 _WHITESPACE_PATTERN = re.compile(r"\s+")
@@ -25,4 +28,6 @@ def normalize(text: str) -> str:
 
 
 def run(state: OrderState) -> OrderState:
-    return {"normalized_text": normalize(state["raw_text"])}
+    result = normalize(state["raw_text"])
+    logger.debug("normalize: normalized_text=%r", result)
+    return {"normalized_text": result}

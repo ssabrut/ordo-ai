@@ -1,3 +1,4 @@
+import logging
 from functools import lru_cache
 
 import torch
@@ -7,12 +8,16 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from ordo_ai.config import get_settings
 from ordo_ai.state.schemas import OrderState
 
+logger = logging.getLogger(__name__)
+
 
 @lru_cache
 def _load():
     settings = get_settings()
     tokenizer = AutoTokenizer.from_pretrained(settings.intent_model_path)
-    model = AutoModelForSequenceClassification.from_pretrained(settings.intent_model_path)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        settings.intent_model_path
+    )
     model.eval()
     return tokenizer, model
 
@@ -21,7 +26,9 @@ def predict_intent(text: str) -> dict:
     tokenizer, model = _load()
     settings = get_settings()
 
-    encoding = tokenizer(text, truncation=True, max_length=settings.max_seq_length, return_tensors="pt")
+    encoding = tokenizer(
+        text, truncation=True, max_length=settings.max_seq_length, return_tensors="pt"
+    )
 
     with torch.no_grad():
         logits = model(**encoding).logits[0]
@@ -38,6 +45,12 @@ def predict_intent(text: str) -> dict:
 
 def run(state: OrderState) -> OrderState:
     result = predict_intent(state["repaired_text"])
+    logger.debug(
+        "intent: intent=%r confidence=%.4f probs=%r",
+        result["intent"],
+        result["confidence"],
+        result["probs"],
+    )
     return {
         "intent": result["intent"],
         "intent_confidence": result["confidence"],

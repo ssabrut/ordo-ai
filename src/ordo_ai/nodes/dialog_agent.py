@@ -1,4 +1,8 @@
+import logging
+
 from ordo_ai.state.schemas import OrderState
+
+logger = logging.getLogger(__name__)
 
 _RESPONSES = {
     "confirm": "Baik, pesanan dikonfirmasi.",
@@ -17,9 +21,14 @@ def _format_cart(cart: list[dict]) -> str:
 def run(state: OrderState) -> OrderState:
     intent = state["intent"]
     response = _RESPONSES[intent]
+    logger.debug("dialog_agent: intent=%r", intent)
 
     if intent == "deny":
-        return {"cart": [], "agent_response": response}
-    if intent == "repeat_request":
-        return {"agent_response": f"{response} {_format_cart(state.get('cart', []))}"}
-    return {"agent_response": response}
+        result = {"cart": [], "agent_response": response}
+    elif intent == "repeat_request":
+        result = {"agent_response": f"{response} {_format_cart(state.get('cart', []))}"}
+    else:
+        result = {"agent_response": response}
+
+    logger.debug("dialog_agent: result=%r", result)
+    return result

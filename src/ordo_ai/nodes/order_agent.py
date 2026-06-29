@@ -1,5 +1,9 @@
+import logging
+
 from ordo_ai.state.schemas import CartItem, EntitySpan, OrderState
 from ordo_ai.tools.menu import find_menu_item
+
+logger = logging.getLogger(__name__)
 
 _NUMBER_WORDS = {
     "satu": 1,
@@ -66,16 +70,21 @@ def run(state: OrderState) -> OrderState:
     intent = state["intent"]
     cart = list(state.get("cart", []))
     parsed_items = _group_entities(state.get("entities", []))
+    logger.debug("order_agent: intent=%r parsed_items=%r", intent, parsed_items)
 
     if intent == "order_cancel":
         cart = []
-        return {"cart": cart, "agent_response": "Pesanan dibatalkan."}
+        result = {"cart": cart, "agent_response": "Pesanan dibatalkan."}
+        logger.debug("order_agent: result=%r", result)
+        return result
 
     if not parsed_items:
-        return {
+        result = {
             "cart": cart,
             "agent_response": "Maaf, saya tidak menangkap item pesanan Anda.",
         }
+        logger.debug("order_agent: result=%r", result)
+        return result
 
     responses = []
     for parsed in parsed_items:
@@ -120,4 +129,6 @@ def run(state: OrderState) -> OrderState:
                 f"{menu_item['name']} x{parsed['quantity']} ditambahkan ke pesanan."
             )
 
-    return {"cart": cart, "agent_response": " ".join(responses)}
+    result = {"cart": cart, "agent_response": " ".join(responses)}
+    logger.debug("order_agent: result=%r", result)
+    return result

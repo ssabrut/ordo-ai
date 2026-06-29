@@ -1,3 +1,4 @@
+import logging
 from functools import lru_cache
 
 import torch
@@ -5,6 +6,8 @@ from transformers import AutoModelForTokenClassification, AutoTokenizer
 
 from ordo_ai.config import get_settings
 from ordo_ai.state.schemas import EntitySpan, OrderState
+
+logger = logging.getLogger(__name__)
 
 
 @lru_cache
@@ -60,12 +63,14 @@ def predict_entities(text: str) -> dict:
             j = i + 1
             while j < len(tokens) and word_labels[j] == f"I-{span_type}":
                 j += 1
-            spans.append({
-                "label": span_type,
-                "text": " ".join(tokens[i:j]),
-                "start": i,
-                "end": j,
-            })
+            spans.append(
+                {
+                    "label": span_type,
+                    "text": " ".join(tokens[i:j]),
+                    "start": i,
+                    "end": j,
+                }
+            )
             i = j
         else:
             i += 1
@@ -79,4 +84,5 @@ def run(state: OrderState) -> OrderState:
         {"text": s["text"], "label": s["label"], "start": s["start"], "end": s["end"]}
         for s in result["spans"]
     ]
+    logger.debug("ner: entities=%r", entities)
     return {"entities": entities}

@@ -27,13 +27,18 @@ def on_final(text: str):
         return
 
     print(f"[utterance] {text}")
-    result = graph.invoke({"raw_text": text})
+    result = {}
+    for update in graph.stream({"raw_text": text}, stream_mode="updates"):
+        for node_name, node_output in update.items():
+            print(f"  [{node_name}] {node_output}")
+            result.update(node_output)
 
     if result.get("needs_clarification"):
         print(f"  -> {result['clarification_message']}")
     else:
         print(f"  -> intent={result['intent']} (conf={result['intent_confidence']:.2f})")
         print(f"  -> entities={result['entities']}")
+        print(f"  -> agent_response={result.get('agent_response')}")
 
     print(f"listening for wake word ({settings.wake_word})...")
 

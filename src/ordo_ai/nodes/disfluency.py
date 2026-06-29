@@ -1,3 +1,4 @@
+import logging
 from functools import lru_cache
 
 import torch
@@ -6,6 +7,8 @@ from transformers import AutoModelForTokenClassification, AutoTokenizer
 from ordo_ai.config import get_settings
 from ordo_ai.state.schemas import OrderState
 
+logger = logging.getLogger(__name__)
+
 DELETE_TAGS = {"IP", "RP", "FS"}
 
 
@@ -13,7 +16,9 @@ DELETE_TAGS = {"IP", "RP", "FS"}
 def _load():
     settings = get_settings()
     tokenizer = AutoTokenizer.from_pretrained(settings.disfluency_model_path)
-    model = AutoModelForTokenClassification.from_pretrained(settings.disfluency_model_path)
+    model = AutoModelForTokenClassification.from_pretrained(
+        settings.disfluency_model_path
+    )
     model.eval()
     return tokenizer, model
 
@@ -62,7 +67,14 @@ def predict_disfluency(text: str) -> dict:
             j = i + 1
             while j < len(tokens) and word_labels[j] == f"I-{span_type}":
                 j += 1
-            spans.append({"label": span_type, "text": " ".join(tokens[i:j]), "start": i, "end": j})
+            spans.append(
+                {
+                    "label": span_type,
+                    "text": " ".join(tokens[i:j]),
+                    "start": i,
+                    "end": j,
+                }
+            )
             i = j
         else:
             i += 1
@@ -88,7 +100,11 @@ def repair(text: str) -> str:
 
 def run(state: OrderState) -> OrderState:
     result = predict_disfluency(state["normalized_text"])
+    repaired_text = repair(state["normalized_text"])
+    logger.debug(
+        "disfluency: tags=%r repaired_text=%r", result["labels"], repaired_text
+    )
     return {
         "disfluency_tags": result["labels"],
-        "repaired_text": repair(state["normalized_text"]),
+        "repaired_text": repaired_text,
     }
