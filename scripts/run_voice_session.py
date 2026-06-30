@@ -9,11 +9,21 @@ import time
 
 from ordo_ai.config import get_settings
 from ordo_ai.graphs.main_graph import compile_graph
+from ordo_ai.nodes import disfluency, intent, ner
 from ordo_ai.nodes.stt import make_wakeword_recorder
 
 settings = get_settings()
 graph = compile_graph()
 stop_event = threading.Event()
+
+
+def warm_up_models():
+    """Force model weights off disk now, not on the first wake-word utterance."""
+    print("loading models...")
+    disfluency._load()
+    ner._load()
+    intent._load()
+    print("models loaded")
 
 
 def on_wake():
@@ -44,6 +54,7 @@ def on_final(text: str):
 
 
 def main():
+    warm_up_models()
     recorder = make_wakeword_recorder(on_wakeword_detected=on_wake)
 
     def transcription_loop():
