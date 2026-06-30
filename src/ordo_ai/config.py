@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     chroma_persist_dir: str = "data/chroma_menu"
     menu_rag_top_k: int = 3
 
+    mlflow_tracking_uri: str = "http://localhost:5000"
+
 
 @lru_cache
 def get_settings() -> Settings:
