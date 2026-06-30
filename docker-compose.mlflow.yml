@@ -14,7 +14,9 @@ services:
       retries: 5
 
   mlflow-server:
-    image: ghcr.io/mlflow/mlflow:v3.6.0
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
     command: >
       mlflow server
       --backend-store-uri postgresql://mlflow:mlflow@mlflow-db:5432/mlflow
@@ -22,7 +24,7 @@ services:
       --host 0.0.0.0
       --port 5000
     ports:
-      - "5000:5000"
+      - "5001:5000"
     volumes:
       - mlflow-artifacts:/mlartifacts
     depends_on:
