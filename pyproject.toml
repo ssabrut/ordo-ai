@@ -33,6 +33,7 @@ dependencies = [
     "pydantic-settings (>=2.0.0,<3.0.0)",
     "mlx-lm (>=0.31.3,<0.32.0)",
     "chromadb (>=1.5.9,<2.0.0)",
+    "pytorch-crf (>=0.7.2,<0.8.0)",
 ]
 
 

@@ -2,9 +2,10 @@ import logging
 from functools import lru_cache
 
 import torch
-from transformers import AutoModelForTokenClassification, AutoTokenizer
+from transformers import AutoTokenizer
 
 from ordo_ai.config import get_settings
+from ordo_ai.models.ner_crf import BertCrfForTokenClassification
 from ordo_ai.state.schemas import EntitySpan, OrderState
 
 logger = logging.getLogger(__name__)
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 def _load():
     settings = get_settings()
     tokenizer = AutoTokenizer.from_pretrained(settings.ner_model_path)
-    model = AutoModelForTokenClassification.from_pretrained(settings.ner_model_path)
+    model = BertCrfForTokenClassification.from_pretrained(settings.ner_model_path)
     model.eval()
     return tokenizer, model
 
@@ -42,8 +43,7 @@ def predict_entities(text: str) -> dict:
     word_ids = encoding.word_ids()
 
     with torch.no_grad():
-        logits = model(**encoding).logits[0]
-    pred_ids = logits.argmax(dim=-1).tolist()
+        pred_ids = model.decode(encoding["input_ids"], encoding["attention_mask"])[0]
     id2label = model.config.id2label
 
     word_labels = [None] * len(tokens)
