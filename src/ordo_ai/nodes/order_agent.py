@@ -1,6 +1,7 @@
 import logging
 
 from ordo_ai.state.schemas import CartItem, EntitySpan, OrderState
+from ordo_ai.tools.cart import add_item, find_cart_index
 from ordo_ai.tools.menu import find_menu_item
 
 logger = logging.getLogger(__name__)
@@ -59,13 +60,6 @@ def _group_entities(entities: list[EntitySpan]) -> list[dict]:
     return items
 
 
-def _find_cart_index(cart: list[CartItem], name: str) -> int | None:
-    for idx, item in enumerate(cart):
-        if item["name"].lower() == name.lower():
-            return idx
-    return None
-
-
 def run(state: OrderState) -> OrderState:
     intent = state["intent"]
     cart = list(state.get("cart", []))
@@ -92,7 +86,7 @@ def run(state: OrderState) -> OrderState:
 
         if intent == "order_remove_item" or parsed["label"] == "REMOVE":
             if menu_item:
-                idx = _find_cart_index(cart, menu_item["name"])
+                idx = find_cart_index(cart, menu_item["name"])
                 if idx is not None:
                     cart.pop(idx)
                     responses.append(f"{menu_item['name']} dihapus dari pesanan.")
@@ -104,30 +98,15 @@ def run(state: OrderState) -> OrderState:
             responses.append(f"Maaf, menu '{parsed['name']}' tidak tersedia.")
             continue
 
-        idx = _find_cart_index(cart, menu_item["name"])
+        idx = find_cart_index(cart, menu_item["name"])
         if intent == "order_modify_quantity" and idx is not None:
             cart[idx]["quantity"] = parsed["quantity"]
             responses.append(
                 f"Jumlah {menu_item['name']} diubah menjadi {parsed['quantity']}."
             )
-        elif idx is not None:
-            cart[idx]["quantity"] += parsed["quantity"]
-            responses.append(
-                f"{menu_item['name']} ditambah {parsed['quantity']}, total {cart[idx]['quantity']}."
-            )
         else:
-            cart.append(
-                {
-                    "menu_id": menu_item["id"],
-                    "name": menu_item["name"],
-                    "price": menu_item["price"],
-                    "quantity": parsed["quantity"],
-                    "notes": parsed["notes"],
-                }
-            )
-            responses.append(
-                f"{menu_item['name']} x{parsed['quantity']} ditambahkan ke pesanan."
-            )
+            cart, message = add_item(cart, menu_item, parsed["quantity"], parsed["notes"])
+            responses.append(message)
 
     result = {"cart": cart, "agent_response": " ".join(responses)}
     logger.debug("order_agent: result=%r", result)
