@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     max_seq_length: int = 64
     intent_confidence_threshold: float = 0.6
 
+    chroma_persist_dir: str = "data/chroma_menu"
+    menu_rag_top_k: int = 3
+
 
 @lru_cache
 def get_settings() -> Settings:
