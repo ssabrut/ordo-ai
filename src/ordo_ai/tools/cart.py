@@ -10,21 +10,31 @@ def find_cart_index(cart: list[CartItem], name: str) -> int | None:
     return None
 
 
+def _strip_nya(word: str) -> str:
+    """Strip possessive/focus suffix -nya from Indonesian word."""
+    return word[:-3] if word.endswith("nya") and len(word) > 4 else word
+
+
 def find_cart_index_fuzzy(cart: list[CartItem], query: str, threshold: float = 0.55) -> int | None:
     """Fuzzy-match query against cart item names.
 
-    Requires at least one query word to appear in the cart item name to avoid
-    cross-word false positives (e.g. 'mie goreng' matching 'Ayam Goreng').
-    Boosts items whose name contains ALL query words.
+    Requires at least one query word (after stripping -nya suffix) to appear in
+    the cart item name to avoid cross-word false positives (e.g. 'mie goreng'
+    matching 'Ayam Goreng'). Boosts items whose name contains ALL query words.
     """
-    query_words = set(query.lower().split())
+    raw_query_words = query.lower().split()
+    # normalise: strip -nya suffix so "spesialnya" matches "spesial"
+    query_words_norm = {_strip_nya(w) for w in raw_query_words}
     best_idx, best_score = None, 0.0
     for idx, item in enumerate(cart):
         item_words = set(item["name"].lower().split())
-        if not query_words.issubset(item_words):
+        # require every normalised query word to appear (as prefix) in some item word
+        def _word_matches(qw: str) -> bool:
+            return any(iw == qw or iw.startswith(qw) for iw in item_words)
+        if not all(_word_matches(qw) for qw in query_words_norm):
             continue
         score = SequenceMatcher(None, query.lower(), item["name"].lower()).ratio()
-        if query_words.issubset(item_words):
+        if query_words_norm.issubset(item_words):
             score += 0.2
         if score > best_score:
             best_idx, best_score = idx, score
