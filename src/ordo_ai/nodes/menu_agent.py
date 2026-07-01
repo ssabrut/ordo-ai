@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 _INQUIRY_SYSTEM = (
     "Kamu adalah asisten pemesanan makanan yang ramah dan membantu. "
     "Jawab pertanyaan pelanggan tentang menu dengan bahasa Indonesia yang natural dan hangat. "
-    "Sertakan nama menu, harga, dan deskripsi. Jawab singkat (1-2 kalimat)."
+    "Fokus pada deskripsi dan bahan-bahan menu. Jangan sebutkan harga. Jawab singkat (1-2 kalimat)."
 )
 
 
@@ -26,8 +26,7 @@ def _dish_query(state: OrderState) -> str | None:
 def _llm_inquiry_response(user_question: str, items: list[dict]) -> str:
     model, tokenizer = _load_llm()
     menu_info = "\n".join(
-        f"- {item['name']}: Rp{item['price']:,}".replace(",", ".") +
-        (f" — {item['description']}" if item.get("description") else "")
+        f"- {item['name']}" + (f": {item['description']}" if item.get("description") else "")
         for item in items
     )
     user_msg = f"Pertanyaan pelanggan: {user_question}\nInfo menu:\n{menu_info}"
