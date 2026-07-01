@@ -14,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 FNB_BANK_PATH = ROOT / "data" / "raw" / "fnb_bank.json"
-DEFAULT_JSONL = ROOT / "data" / "raw" / "generated_ordering_dataset.jsonl"
+DEFAULT_JSONL = ROOT / "data" / "raw" / "intent_dataset.jsonl"
 
 _QUANTITY_RE = re.compile(
     r'\b(satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh'

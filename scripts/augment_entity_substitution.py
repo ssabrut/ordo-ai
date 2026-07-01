@@ -28,7 +28,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 FNB_BANK_PATH = ROOT / "data" / "raw" / "fnb_bank.json"
-DEFAULT_INPUT = ROOT / "data" / "raw" / "generated_ordering_dataset.jsonl"
+DEFAULT_INPUT = ROOT / "data" / "raw" / "intent_dataset.jsonl"
 DEFAULT_OUTPUT = ROOT / "data" / "raw" / "augmented_ordering_dataset.jsonl"
 
 SUBSTITUTABLE = {"FOOD_ITEM", "DRINK_ITEM", "MODIFIER"}
