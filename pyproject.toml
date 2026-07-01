@@ -36,6 +36,7 @@ dependencies = [
     "pytorch-crf (>=0.7.2,<0.8.0)",
     "mlflow (>=3.6.0,<4.0.0)",
     "torchvision (>=0.27.1,<0.28.0) ; python_version != \"3.14.1\"",
+    "anthropic (>=0.115.0,<0.116.0)",
 ]
 
 
