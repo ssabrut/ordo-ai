@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     menu_rag_top_k: int = 3
 
     mlflow_tracking_uri: str = "http://localhost:5001"
+    mlflow_s3_endpoint_url: str = "http://localhost:9000"
+    aws_access_key_id: str = "minioadmin"
+    aws_secret_access_key: str = "minioadmin"
 
 
 @lru_cache
