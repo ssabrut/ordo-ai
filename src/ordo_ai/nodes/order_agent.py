@@ -109,7 +109,8 @@ def _consume_last_discussed(state: OrderState, cart: list, responses: list) -> d
         elif ent["label"] in ("MODIFIER", "ADD_ON", "SIZE"):
             notes.append(ent["text"])
 
-    cart, message = add_item(cart, last_item, qty, notes)
+    new_cart, message = add_item(cart, last_item, qty, notes)
+    cart[:] = new_cart
     responses.append(message)
     logger.debug("order_agent: consumed last_discussed_item=%r x%d", last_item["name"], qty)
     return {"last_discussed_item": None}
