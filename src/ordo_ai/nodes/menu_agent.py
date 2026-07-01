@@ -14,11 +14,17 @@ def _dish_query(state: OrderState) -> str | None:
     return None
 
 
+def _format_with_description(item: dict) -> str:
+    base = f"{item['name']} - Rp{item['price']:,}".replace(",", ".")
+    desc = item.get("description", "")
+    return f"{base}: {desc}" if desc else base
+
+
 def run(state: OrderState) -> OrderState:
     query = _dish_query(state)
+    is_inquiry = state.get("intent") == "menu_inquiry"
 
     if query:
-        # NER caught a specific dish/drink span -> resolve to one confident item.
         menu_item = find_menu_item(query)
         results = [menu_item] if menu_item else search_menu(query=query)
         logger.debug("menu_agent: fuzzy query=%r results=%r", query, [r["name"] for r in results])
@@ -33,16 +39,20 @@ def run(state: OrderState) -> OrderState:
         logger.debug("menu_agent: result=%r", result)
         return result
 
-    lines = [
-        f"{item['name']} - Rp{item['price']:,}".replace(",", ".") for item in results
-    ]
-    response = "Berikut menu yang tersedia: " + "; ".join(lines)
-
-    if menu_item:
-        cart, message = add_item(state.get("cart", []), menu_item)
-        result = {"cart": cart, "agent_response": f"{response} {message}"}
-    else:
+    if is_inquiry:
+        lines = [_format_with_description(item) for item in results]
+        response = "Berikut informasi menu: " + "; ".join(lines)
         result = {"agent_response": response}
+    else:
+        lines = [
+            f"{item['name']} - Rp{item['price']:,}".replace(",", ".") for item in results
+        ]
+        response = "Berikut menu yang tersedia: " + "; ".join(lines)
+        if menu_item:
+            cart, message = add_item(state.get("cart", []), menu_item)
+            result = {"cart": cart, "agent_response": f"{response} {message}"}
+        else:
+            result = {"agent_response": response}
 
     logger.debug("menu_agent: result=%r", result)
     return result

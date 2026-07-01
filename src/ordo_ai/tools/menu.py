@@ -30,7 +30,7 @@ def _similarity(a: str, b: str) -> float:
 
 
 def find_menu_item(name: str, threshold: float = 0.55) -> dict | None:
-    """Fuzzy-match an entity span (e.g. NER DISH/DRINK text) against the menu catalog."""
+    """Fuzzy-match an entity span against the menu catalog. Returns single best match."""
     items = load_menu()
     best, best_score = None, 0.0
     for item in items:
@@ -40,6 +40,38 @@ def find_menu_item(name: str, threshold: float = 0.55) -> dict | None:
     if best is not None and best_score >= threshold:
         return best
     return None
+
+
+def find_menu_items(name: str, threshold: float = 0.55, band: float = 0.02) -> list[dict]:
+    """Return candidates within `band` of the top similarity score.
+
+    Also filters out items that don't share any query words (avoids cross-word
+    false positives like 'nasi goreng' matching 'Ayam Goreng').
+
+    Returns [] if nothing clears `threshold`.
+    Returns [single] when one item is clearly best.
+    Returns multiple when top candidates tie (ambiguous query like 'nasi goreng').
+    """
+    items = load_menu()
+    query_words = set(name.lower().split())
+    scored = sorted(
+        [(item, _similarity(name, item["name"])) for item in items],
+        key=lambda x: x[1],
+        reverse=True,
+    )
+    if not scored or scored[0][1] < threshold:
+        return []
+    # filter to items containing all query words, scored above threshold
+    subset_scored = [
+        (item, score) for item, score in scored
+        if score >= threshold and query_words.issubset(set(item["name"].lower().split()))
+    ]
+    if subset_scored:
+        top_score = subset_scored[0][1]
+        return [item for item, score in subset_scored if score >= top_score - band]
+    # no item contains all query words — fall back to single raw best match
+    best_item, best_score = scored[0]
+    return [best_item] if best_score >= threshold else []
 
 
 def search_menu(query: str | None = None, category: str | None = None) -> list[dict]:

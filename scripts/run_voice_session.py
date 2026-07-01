@@ -16,6 +16,9 @@ settings = get_settings()
 graph = compile_graph()
 stop_event = threading.Event()
 
+_SESSION_CARRY_KEYS = ("cart", "pending_item", "needs_clarification")
+session_state: dict = {}
+
 
 def warm_up_models():
     """Force model weights off disk now, not on the first wake-word utterance."""
@@ -37,11 +40,16 @@ def on_final(text: str):
         return
 
     print(f"[utterance] {text}")
+    graph_input = {**{k: v for k, v in session_state.items() if v is not None}, "raw_text": text}
     result = {}
-    for update in graph.stream({"raw_text": text}, stream_mode="updates"):
+    for update in graph.stream(graph_input, stream_mode="updates"):
         for node_name, node_output in update.items():
             print(f"  [{node_name}] {node_output}")
             result.update(node_output)
+
+    for key in _SESSION_CARRY_KEYS:
+        if key in result:
+            session_state[key] = result[key]
 
     if result.get("needs_clarification"):
         print(f"  -> {result['clarification_message']}")
@@ -49,6 +57,7 @@ def on_final(text: str):
         print(f"  -> intent={result['intent']} (conf={result['intent_confidence']:.2f})")
         print(f"  -> entities={result['entities']}")
         print(f"  -> agent_response={result.get('agent_response')}")
+        print(f"  -> cart={session_state.get('cart', [])}")
 
     print(f"listening for wake word ({settings.wake_word})...")
 

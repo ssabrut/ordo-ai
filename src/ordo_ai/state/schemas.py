@@ -16,6 +16,13 @@ class CartItem(TypedDict):
     notes: list[str]
 
 
+class PendingItem(TypedDict):
+    name: str
+    quantity: int
+    notes: list[str]
+    candidates: list[dict]
+
+
 class OrderState(TypedDict, total=False):
     audio: bytes
     raw_text: str
@@ -28,5 +35,7 @@ class OrderState(TypedDict, total=False):
     intent_probs: dict[str, float]
     needs_clarification: bool
     clarification_message: str
+    pending_item: PendingItem
     cart: list[CartItem]
     agent_response: str
+    node_timings: dict[str, float]
