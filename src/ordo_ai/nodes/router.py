@@ -14,6 +14,7 @@ _INTENT_TO_AGENT: dict[str, AgentName] = {
     "order_remove_item": "order_agent",
     "order_cancel": "order_agent",
     "order_modify_quantity": "order_agent",
+    "order_swap": "order_agent",
     "menu_inquiry": "menu_agent",
     "confirm": "dialog_agent",
     "deny": "dialog_agent",

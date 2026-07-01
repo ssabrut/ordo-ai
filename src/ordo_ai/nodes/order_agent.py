@@ -1,7 +1,7 @@
 import logging
 
 from ordo_ai.state.schemas import CartItem, EntitySpan, OrderState, PendingItem
-from ordo_ai.tools.cart import add_item, find_cart_index
+from ordo_ai.tools.cart import add_item, find_cart_index, find_cart_index_fuzzy
 from ordo_ai.tools.menu import find_menu_item, find_menu_items
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,39 @@ def _group_entities(entities: list[EntitySpan]) -> list[dict]:
     return items
 
 
+def _resolve_pending(state: OrderState) -> OrderState | None:
+    """If state has an active disambiguation, try to resolve it from entities or repaired text."""
+    pending = state.get("pending_item")
+    if not (state.get("needs_clarification") and pending and pending.get("candidates")):
+        return None
+
+    candidates = pending["candidates"]
+    cart = list(state.get("cart", []))
+
+    # try entity match first
+    for ent in state.get("entities", []):
+        if ent["label"] in ("DISH", "DRINK"):
+            lower = ent["text"].lower()
+            for i, c in enumerate(candidates):
+                if lower in c["name"].lower() or c["name"].lower() in lower:
+                    remove_name = pending.get("remove_name")
+                    if remove_name:
+                        idx = find_cart_index(cart, remove_name)
+                        if idx is not None:
+                            cart.pop(idx)
+                    cart, message = add_item(cart, c, pending["quantity"], pending["notes"])
+                    logger.debug("order_agent: resolved pending via entity -> %r", c["name"])
+                    return {"cart": cart, "pending_item": None, "needs_clarification": False, "agent_response": message}
+
+    return None
+
+
 def run(state: OrderState) -> OrderState:
+    # resolve pending disambiguation before processing new intent
+    resolved = _resolve_pending(state)
+    if resolved is not None:
+        return resolved
+
     intent = state["intent"]
     cart = list(state.get("cart", []))
     parsed_items = _group_entities(state.get("entities", []))
@@ -70,6 +102,61 @@ def run(state: OrderState) -> OrderState:
         cart = []
         result = {"cart": cart, "agent_response": "Pesanan dibatalkan."}
         logger.debug("order_agent: result=%r", result)
+        return result
+
+    if intent == "order_swap":
+        if len(parsed_items) < 2:
+            result = {"cart": cart, "agent_response": "Maaf, sebutkan item yang ingin diganti dan penggantinya."}
+            logger.debug("order_agent: swap missing items")
+            return result
+
+        remove_parsed, add_parsed = parsed_items[0], parsed_items[1]
+
+        # remove the first item from cart
+        responses = []
+        remove_name_resolved = None
+        idx = find_cart_index_fuzzy(cart, remove_parsed["name"])
+        if idx is not None:
+            remove_name_resolved = cart[idx]["name"]
+            cart.pop(idx)
+            responses.append(f"{remove_name_resolved} dihapus dari pesanan.")
+        else:
+            responses.append(f"Menu '{remove_parsed['name']}' tidak ada di pesanan.")
+
+        # add the second item (with ambiguity handling)
+        candidates = find_menu_items(add_parsed["name"])
+        if not candidates:
+            responses.append(f"Maaf, menu '{add_parsed['name']}' tidak tersedia.")
+            result = {"cart": cart, "agent_response": " ".join(responses)}
+            return result
+
+        if len(candidates) > 1:
+            options = ", ".join(
+                f"{i+1}. {c['name']} (Rp{c['price']:,})".replace(",", ".")
+                for i, c in enumerate(candidates)
+            )
+            pending: PendingItem = {
+                "name": add_parsed["name"],
+                "quantity": add_parsed["quantity"],
+                "notes": add_parsed["notes"],
+                "candidates": candidates,
+                "remove_name": remove_name_resolved,
+            }
+            msg = f"{''.join(responses)} Ada beberapa pilihan untuk '{add_parsed['name']}': {options}. Mau yang mana?"
+            result = {
+                "cart": cart,
+                "pending_item": pending,
+                "needs_clarification": True,
+                "clarification_message": msg,
+                "agent_response": msg,
+            }
+            logger.debug("order_agent: swap ambiguous add=%r", add_parsed["name"])
+            return result
+
+        cart, message = add_item(cart, candidates[0], add_parsed["quantity"], add_parsed["notes"])
+        responses.append(message)
+        result = {"cart": cart, "pending_item": None, "needs_clarification": False, "agent_response": " ".join(responses)}
+        logger.debug("order_agent: swap result=%r", result)
         return result
 
     if not parsed_items:
@@ -83,14 +170,13 @@ def run(state: OrderState) -> OrderState:
     responses = []
     for parsed in parsed_items:
         if intent == "order_remove_item" or parsed["label"] == "REMOVE":
-            menu_item = find_menu_item(parsed["name"])
-            if menu_item:
-                idx = find_cart_index(cart, menu_item["name"])
-                if idx is not None:
-                    cart.pop(idx)
-                    responses.append(f"{menu_item['name']} dihapus dari pesanan.")
-                    continue
-            responses.append(f"{parsed['name']} tidak ditemukan di pesanan.")
+            idx = find_cart_index_fuzzy(cart, parsed["name"])
+            if idx is not None:
+                removed_name = cart[idx]["name"]
+                cart.pop(idx)
+                responses.append(f"{removed_name} dihapus dari pesanan.")
+            else:
+                responses.append(f"{parsed['name']} tidak ditemukan di pesanan.")
             continue
 
         candidates = find_menu_items(parsed["name"])

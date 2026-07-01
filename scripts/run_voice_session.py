@@ -44,7 +44,8 @@ def on_final(text: str):
     result = {}
     for update in graph.stream(graph_input, stream_mode="updates"):
         for node_name, node_output in update.items():
-            print(f"  [{node_name}] {node_output}")
+            display = {k: v for k, v in node_output.items() if k != "node_timings"}
+            print(f"  [{node_name}] {display}")
             result.update(node_output)
 
     for key in _SESSION_CARRY_KEYS:
@@ -58,6 +59,11 @@ def on_final(text: str):
         print(f"  -> entities={result['entities']}")
         print(f"  -> agent_response={result.get('agent_response')}")
         print(f"  -> cart={session_state.get('cart', [])}")
+
+    timings = result.get("node_timings", {})
+    if timings:
+        timing_str = "  -> timings: " + "  ".join(f"{k}={v:.4f}s" for k, v in timings.items())
+        print(timing_str)
 
     print(f"listening for wake word ({settings.wake_word})...")
 

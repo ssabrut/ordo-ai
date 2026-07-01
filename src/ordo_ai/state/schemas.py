@@ -21,6 +21,7 @@ class PendingItem(TypedDict):
     quantity: int
     notes: list[str]
     candidates: list[dict]
+    remove_name: str | None
 
 
 class OrderState(TypedDict, total=False):

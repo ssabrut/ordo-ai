@@ -2,7 +2,7 @@ import logging
 import re
 
 from ordo_ai.state.schemas import OrderState
-from ordo_ai.tools.cart import add_item
+from ordo_ai.tools.cart import add_item, find_cart_index
 
 logger = logging.getLogger(__name__)
 
@@ -56,22 +56,34 @@ def run(state: OrderState) -> OrderState:
     pending = state.get("pending_item")
     if state.get("needs_clarification") and pending and pending.get("candidates"):
         candidates = pending["candidates"]
-        pick_idx = _pick_candidate_index(state.get("repaired_text", ""))
+        repaired = state.get("repaired_text", "")
+        pick_idx = _pick_candidate_index(repaired)
+        # also try matching candidate name directly from repaired text
+        if pick_idx is None:
+            lower = repaired.lower()
+            for i, c in enumerate(candidates):
+                if c["name"].lower() in lower or lower in c["name"].lower():
+                    pick_idx = i
+                    break
         if pick_idx is not None and 0 <= pick_idx < len(candidates):
             menu_item = candidates[pick_idx]
-            cart, message = add_item(
-                list(state.get("cart", [])),
-                menu_item,
-                pending["quantity"],
-                pending["notes"],
-            )
+            cart = list(state.get("cart", []))
+
+            # if this was a swap, remove the original item first
+            remove_name = pending.get("remove_name")
+            if remove_name:
+                idx = find_cart_index(cart, remove_name)
+                if idx is not None:
+                    cart.pop(idx)
+
+            cart, message = add_item(cart, menu_item, pending["quantity"], pending["notes"])
             result = {
                 "cart": cart,
                 "pending_item": None,
                 "needs_clarification": False,
                 "agent_response": message,
             }
-            logger.debug("dialog_agent: resolved pending_item -> %r", menu_item["name"])
+            logger.debug("dialog_agent: resolved pending_item -> %r (removed %r)", menu_item["name"], remove_name)
             return result
 
         # user confirmed but didn't pick a number — re-ask

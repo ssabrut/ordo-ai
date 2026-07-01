@@ -20,6 +20,7 @@ _VALID_LABELS = [
     "order_create",
     "order_modify_quantity",
     "order_remove_item",
+    "order_swap",
     "repeat_request",
 ]
 
@@ -29,6 +30,7 @@ _LABEL_DESCRIPTIONS = {
     "order_remove_item": "user wants to remove a specific item from their order",
     "order_cancel": "user wants to cancel the entire order",
     "order_modify_quantity": "user wants to change the quantity of an item already in their order",
+    "order_swap": "user wants to replace/swap one item in their order with another (e.g. 'ganti X ke Y', 'tukar X dengan Y')",
     "menu_inquiry": "user asks about available menu items, prices, or descriptions",
     "repeat_request": "user asks to recap, repeat, or review what is currently in their order/cart",
     "confirm": "user confirms or agrees (yes, oke, betul, lanjut, dll)",

@@ -1,10 +1,19 @@
 import logging
 
+from mlx_lm import generate
+
+from ordo_ai.nodes.intent import _load as _load_llm
 from ordo_ai.state.schemas import OrderState
 from ordo_ai.tools.cart import add_item
 from ordo_ai.tools.menu import find_menu_item, search_menu, search_menu_semantic
 
 logger = logging.getLogger(__name__)
+
+_INQUIRY_SYSTEM = (
+    "Kamu adalah asisten pemesanan makanan yang ramah dan membantu. "
+    "Jawab pertanyaan pelanggan tentang menu dengan bahasa Indonesia yang natural dan hangat. "
+    "Sertakan nama menu, harga, dan deskripsi. Jawab singkat (1-2 kalimat)."
+)
 
 
 def _dish_query(state: OrderState) -> str | None:
@@ -14,10 +23,20 @@ def _dish_query(state: OrderState) -> str | None:
     return None
 
 
-def _format_with_description(item: dict) -> str:
-    base = f"{item['name']} - Rp{item['price']:,}".replace(",", ".")
-    desc = item.get("description", "")
-    return f"{base}: {desc}" if desc else base
+def _llm_inquiry_response(user_question: str, items: list[dict]) -> str:
+    model, tokenizer = _load_llm()
+    menu_info = "\n".join(
+        f"- {item['name']}: Rp{item['price']:,}".replace(",", ".") +
+        (f" — {item['description']}" if item.get("description") else "")
+        for item in items
+    )
+    user_msg = f"Pertanyaan pelanggan: {user_question}\nInfo menu:\n{menu_info}"
+    messages = [
+        {"role": "system", "content": _INQUIRY_SYSTEM},
+        {"role": "user", "content": user_msg},
+    ]
+    prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    return generate(model, tokenizer, prompt=prompt, max_tokens=128, verbose=False).strip()
 
 
 def run(state: OrderState) -> OrderState:
@@ -40,8 +59,8 @@ def run(state: OrderState) -> OrderState:
         return result
 
     if is_inquiry:
-        lines = [_format_with_description(item) for item in results]
-        response = "Berikut informasi menu: " + "; ".join(lines)
+        user_question = state.get("normalized_text", query or "")
+        response = _llm_inquiry_response(user_question, results)
         result = {"agent_response": response}
     else:
         lines = [
