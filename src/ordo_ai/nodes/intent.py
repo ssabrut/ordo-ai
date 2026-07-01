@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from functools import lru_cache
 
 from mlx_lm import generate, load
@@ -47,8 +48,24 @@ _SYSTEM_PROMPT = (
     "Output ONLY a single JSON object with two fields:\n"
     '  "intent": one of the intent names above\n'
     '  "confidence": float 0.0–1.0\n'
-    "No explanation. No markdown. No extra text."
+    "No explanation. No markdown. No extra text.\n\n"
+    "Example output:\n"
+    '{"intent": "menu_inquiry", "confidence": 0.95}'
 )
+
+
+def _regex_rescue(raw: str) -> tuple[str | None, float]:
+    """Extract intent label and confidence from malformed model output via regex."""
+    # find first valid label name appearing in the raw string
+    pattern = "|".join(re.escape(label) for label in _VALID_LABELS)
+    match = re.search(pattern, raw)
+    if not match:
+        return None, 0.0
+    intent = match.group(0)
+    # find first float/int in the string (confidence)
+    num_match = re.search(r'0?\.\d+|\b1\.0\b|\b[01]\b', raw)
+    confidence = float(num_match.group(0)) if num_match else 0.9
+    return intent, min(max(confidence, 0.0), 1.0)
 
 
 @lru_cache
@@ -93,9 +110,12 @@ def predict_intent(text: str) -> dict:
         if intent not in _VALID_LABELS:
             raise ValueError(f"unknown intent label: {intent!r}")
     except Exception as exc:
-        logger.warning("intent: parse failed (%s), raw=%r, falling back", exc, raw)
-        intent = "chitchat_oos"
-        confidence = 0.0
+        logger.warning("intent: parse failed (%s), raw=%r, trying regex rescue", exc, raw)
+        intent, confidence = _regex_rescue(raw)
+        if intent is None:
+            logger.warning("intent: regex rescue failed, defaulting to chitchat_oos")
+            intent = "chitchat_oos"
+            confidence = 0.0
 
     return {
         "intent": intent,
