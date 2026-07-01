@@ -61,6 +61,8 @@ def run(state: OrderState) -> OrderState:
         user_question = state.get("normalized_text", query or "")
         response = _llm_inquiry_response(user_question, results)
         result = {"agent_response": response}
+        if len(results) == 1:
+            result["last_discussed_item"] = results[0]
     else:
         lines = [
             f"{item['name']} - Rp{item['price']:,}".replace(",", ".") for item in results

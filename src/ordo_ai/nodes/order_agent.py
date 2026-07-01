@@ -87,6 +87,34 @@ def _resolve_pending(state: OrderState) -> OrderState | None:
     return None
 
 
+def _consume_last_discussed(state: OrderState, cart: list, responses: list) -> dict | None:
+    """If last_discussed_item is set and repaired text contains a reference to 'it' (itu/ini),
+    add it to cart with the nearest orphaned QUANTITY, return updated cart."""
+    last_item = state.get("last_discussed_item")
+    if not last_item:
+        return None
+    repaired = state.get("repaired_text", "").lower()
+    if not any(ref in repaired for ref in ("itu", "ini", "boleh", "oke", "mau itu")):
+        return None
+
+    # find first QUANTITY entity not preceded by a DISH entity
+    spans = sorted(state.get("entities", []), key=lambda e: e["start"])
+    qty = 1
+    notes = []
+    for ent in spans:
+        if ent["label"] in ("DISH", "DRINK"):
+            break
+        if ent["label"] == "QUANTITY":
+            qty = _parse_quantity(ent["text"])
+        elif ent["label"] in ("MODIFIER", "ADD_ON", "SIZE"):
+            notes.append(ent["text"])
+
+    cart, message = add_item(cart, last_item, qty, notes)
+    responses.append(message)
+    logger.debug("order_agent: consumed last_discussed_item=%r x%d", last_item["name"], qty)
+    return {"last_discussed_item": None}
+
+
 def run(state: OrderState) -> OrderState:
     # resolve pending disambiguation before processing new intent
     resolved = _resolve_pending(state)
@@ -97,6 +125,13 @@ def run(state: OrderState) -> OrderState:
     cart = list(state.get("cart", []))
     parsed_items = _group_entities(state.get("entities", []))
     logger.debug("order_agent: intent=%r parsed_items=%r", intent, parsed_items)
+
+    # consume last_discussed_item if user referred to it ("itu", "ini", etc.)
+    extra = {}
+    responses = []
+    consumed = _consume_last_discussed(state, cart, responses)
+    if consumed is not None:
+        extra.update(consumed)
 
     if intent == "order_cancel":
         cart = []
@@ -160,14 +195,13 @@ def run(state: OrderState) -> OrderState:
         return result
 
     if not parsed_items:
-        result = {
-            "cart": cart,
-            "agent_response": "Maaf, saya tidak menangkap item pesanan Anda.",
-        }
+        if responses:
+            result = {**extra, "cart": cart, "last_discussed_item": None, "agent_response": " ".join(responses)}
+        else:
+            result = {"cart": cart, "agent_response": "Maaf, saya tidak menangkap item pesanan Anda."}
         logger.debug("order_agent: result=%r", result)
         return result
 
-    responses = []
     for parsed in parsed_items:
         if intent == "order_remove_item" or parsed["label"] == "REMOVE":
             idx = find_cart_index_fuzzy(cart, parsed["name"])
@@ -217,6 +251,8 @@ def run(state: OrderState) -> OrderState:
             cart, message = add_item(cart, menu_item, parsed["quantity"], parsed["notes"])
             responses.append(message)
 
-    result = {"cart": cart, "agent_response": " ".join(responses)}
+    result = {**extra, "cart": cart, "agent_response": " ".join(responses)}
+    if extra:
+        result["last_discussed_item"] = None
     logger.debug("order_agent: result=%r", result)
     return result

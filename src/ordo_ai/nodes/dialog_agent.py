@@ -1,8 +1,10 @@
 import logging
 import re
 
+from ordo_ai.nodes.order_agent import _group_entities, _parse_quantity
 from ordo_ai.state.schemas import OrderState
 from ordo_ai.tools.cart import add_item, find_cart_index
+from ordo_ai.tools.menu import find_menu_items
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +99,45 @@ def run(state: OrderState) -> OrderState:
             "agent_response": msg,
         }
         logger.debug("dialog_agent: re-asking clarification")
+        return result
+
+    # confirm with context from last discussed menu item → add it + any extra DISH entities
+    last_item = state.get("last_discussed_item")
+    if last_item:
+        cart = list(state.get("cart", []))
+        responses = []
+
+        # find quantity for last_discussed_item from entities (QUANTITY with no adjacent DISH)
+        # or fall back to parsing repaired text
+        parsed_items = _group_entities(state.get("entities", []))
+        dish_names_in_entities = {p["name"].lower() for p in parsed_items}
+
+        # quantity for last_discussed_item: first QUANTITY entity not tied to a DISH
+        # simplest: use _parse_quantity on repaired text, let _group_entities handle the rest
+        last_qty = 1
+        for p in parsed_items:
+            if p["label"] in ("DISH", "DRINK"):
+                break
+            if p["label"] == "QUANTITY":
+                last_qty = p["quantity"]
+                break
+
+        cart, msg = add_item(cart, last_item, last_qty)
+        responses.append(msg)
+
+        # process any explicit DISH entities as additional new items
+        for parsed in parsed_items:
+            if parsed["label"] not in ("DISH", "DRINK"):
+                continue
+            candidates = find_menu_items(parsed["name"])
+            if not candidates:
+                responses.append(f"Maaf, menu '{parsed['name']}' tidak tersedia.")
+                continue
+            cart, msg = add_item(cart, candidates[0], parsed["quantity"], parsed["notes"])
+            responses.append(msg)
+
+        result = {"cart": cart, "last_discussed_item": None, "agent_response": " ".join(responses)}
+        logger.debug("dialog_agent: confirm+context -> %r", responses)
         return result
 
     result = {"agent_response": _RESPONSES["confirm"]}

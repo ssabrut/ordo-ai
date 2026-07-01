@@ -16,7 +16,7 @@ settings = get_settings()
 graph = compile_graph()
 stop_event = threading.Event()
 
-_SESSION_CARRY_KEYS = ("cart", "pending_item", "needs_clarification")
+_SESSION_CARRY_KEYS = ("cart", "pending_item", "needs_clarification", "last_discussed_item")
 session_state: dict = {}
 
 

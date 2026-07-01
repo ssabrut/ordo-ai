@@ -37,6 +37,7 @@ class OrderState(TypedDict, total=False):
     needs_clarification: bool
     clarification_message: str
     pending_item: PendingItem
+    last_discussed_item: dict
     cart: list[CartItem]
     agent_response: str
     node_timings: dict[str, float]
