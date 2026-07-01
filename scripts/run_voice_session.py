@@ -52,7 +52,7 @@ def on_final(text: str):
             session_state[key] = result[key]
 
     if result.get("needs_clarification"):
-        print(f"  -> {result['clarification_message']}")
+        print(f"  -> {result.get('clarification_message', result.get('agent_response'))}")
     else:
         print(f"  -> intent={result['intent']} (conf={result['intent_confidence']:.2f})")
         print(f"  -> entities={result['entities']}")

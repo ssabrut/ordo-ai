@@ -70,14 +70,24 @@ def predict_intent(text: str) -> dict:
     raw = generate(model, tokenizer, prompt=prompt, max_tokens=64, verbose=False)
 
     try:
-        text = raw.strip()
-        if not text.startswith("{"):
-            text = "{" + text
-        if not text.endswith("}"):
-            text = text + "}"
-        parsed = json.loads(text)
-        intent = parsed["intent"]
-        confidence = float(parsed["confidence"])
+        cleaned = raw.strip()
+        if not cleaned.startswith("{"):
+            cleaned = "{" + cleaned
+        if not cleaned.endswith("}"):
+            cleaned = cleaned + "}"
+        parsed = json.loads(cleaned)
+
+        if "intent" in parsed:
+            intent = parsed["intent"]
+            confidence = float(parsed["confidence"])
+        else:
+            # model returned {"label": score} shorthand
+            label_keys = [k for k in parsed if k in _VALID_LABELS]
+            if not label_keys:
+                raise ValueError(f"no valid label key in {parsed}")
+            intent = max(label_keys, key=lambda k: float(parsed[k]))
+            confidence = float(parsed[intent])
+
         if intent not in _VALID_LABELS:
             raise ValueError(f"unknown intent label: {intent!r}")
     except Exception as exc:
@@ -93,7 +103,7 @@ def predict_intent(text: str) -> dict:
 
 
 def run(state: OrderState) -> OrderState:
-    result = predict_intent(state["repaired_text"])
+    result = predict_intent(state["normalized_text"])
     logger.debug(
         "intent: intent=%r confidence=%.4f",
         result["intent"],

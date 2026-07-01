@@ -52,9 +52,9 @@ def run(state: OrderState) -> OrderState:
         logger.debug("dialog_agent: result=%r", result)
         return result
 
-    # confirm — resolve pending_item if present
+    # confirm — resolve pending_item only when actively awaiting disambiguation
     pending = state.get("pending_item")
-    if pending and pending.get("candidates"):
+    if state.get("needs_clarification") and pending and pending.get("candidates"):
         candidates = pending["candidates"]
         pick_idx = _pick_candidate_index(state.get("repaired_text", ""))
         if pick_idx is not None and 0 <= pick_idx < len(candidates):
@@ -78,9 +78,11 @@ def run(state: OrderState) -> OrderState:
         options = ", ".join(
             f"{i+1}. {c['name']}" for i, c in enumerate(candidates)
         )
+        msg = f"Pilih nomor: {options}."
         result = {
             "needs_clarification": True,
-            "agent_response": f"Pilih nomor: {options}.",
+            "clarification_message": msg,
+            "agent_response": msg,
         }
         logger.debug("dialog_agent: re-asking clarification")
         return result
