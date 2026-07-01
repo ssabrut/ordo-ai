@@ -73,12 +73,13 @@ DISF_TAG_MAP = {
 }
 
 
-def load_vocab() -> tuple[dict, dict]:
+def load_vocab() -> tuple[dict, dict, list[tuple[str, str]]]:
     with DISFLUENCIES_PATH.open() as f:
         disf = json.load(f)["disfluencies"]
     with FNB_BANK_PATH.open() as f:
         fnb = json.load(f)
-    return disf, fnb
+    ner_vocab = build_ner_vocab(fnb)
+    return disf, fnb, ner_vocab
 
 
 def sample_items(fnb: dict, n_food: int = 2, n_drink: int = 1) -> dict:
@@ -138,13 +139,63 @@ eh bukan, bukan cumi goreng tepung, saya maunya nasi uduk satu ni- nih"""
 def extract_disfluencies_from_text(
     text: str, disfluency_samples: list[tuple[str, str, str]]
 ) -> list[dict]:
-    """Find which disfluency tokens actually appear in the generated text."""
+    """Find disfluency tokens in text, return with char offsets."""
     found = []
     for _, tag, token in disfluency_samples:
-        # case-insensitive substring search
-        if re.search(re.escape(token), text, re.IGNORECASE):
-            found.append({"tag": tag, "token": token})
+        m = re.search(re.escape(token), text, re.IGNORECASE)
+        if m:
+            found.append({"tag": tag, "token": m.group(), "start": m.start(), "end": m.end()})
     return found
+
+
+def build_ner_vocab(fnb: dict) -> list[tuple[str, str]]:
+    """Return (surface, label) pairs sorted longest-first to prefer longer matches."""
+    pairs: list[tuple[str, str]] = []
+    for food in fnb["foods"]:
+        pairs.append((food, "FOOD_ITEM"))
+    for drink in fnb["drinks"]:
+        pairs.append((drink, "DRINK_ITEM"))
+    for mods in fnb["food_modifiers"].values():
+        for m in mods:
+            pairs.append((m, "MODIFIER"))
+    for mods in fnb["drink_modifiers"].values():
+        for m in mods:
+            pairs.append((m, "MODIFIER"))
+    # longest surface first so "Nasi Goreng Spesial" wins over "Nasi Goreng"
+    pairs.sort(key=lambda x: len(x[0]), reverse=True)
+    return pairs
+
+
+_QUANTITY_RE = re.compile(
+    r'\b(satu|dua|tiga|empat|lima|enam|tujuh|delapan|sembilan|sepuluh'
+    r'|setengah|seporsi|[1-9][0-9]?)\b',
+    re.IGNORECASE,
+)
+
+
+def extract_entities(text: str, ner_vocab: list[tuple[str, str]]) -> list[dict]:
+    """String-match NER entities; return non-overlapping spans sorted by start offset."""
+    covered: list[tuple[int, int]] = []
+    entities: list[dict] = []
+
+    def _overlaps(s: int, e: int) -> bool:
+        return any(s < ce and e > cs for cs, ce in covered)
+
+    # menu items + modifiers
+    for surface, label in ner_vocab:
+        for m in re.finditer(re.escape(surface), text, re.IGNORECASE):
+            if not _overlaps(m.start(), m.end()):
+                entities.append({"label": label, "token": m.group(), "start": m.start(), "end": m.end()})
+                covered.append((m.start(), m.end()))
+
+    # quantities
+    for m in _QUANTITY_RE.finditer(text):
+        if not _overlaps(m.start(), m.end()):
+            entities.append({"label": "QUANTITY", "token": m.group(), "start": m.start(), "end": m.end()})
+            covered.append((m.start(), m.end()))
+
+    entities.sort(key=lambda e: e["start"])
+    return entities
 
 
 def generate_utterance(
@@ -199,7 +250,7 @@ def main() -> None:
     if args.seed is not None:
         random.seed(args.seed)
 
-    disf, fnb = load_vocab()
+    disf, fnb, ner_vocab = load_vocab()
 
     print(f"Loading model: {args.model} …")
     model, tokenizer = load(args.model)
@@ -228,12 +279,14 @@ def main() -> None:
                 continue
 
             disfluencies = extract_disfluencies_from_text(text, disfluency_samples)
+            entities = extract_entities(text, ner_vocab)
 
             row = {
                 "id": start_id + generated,
                 "text": text,
                 "intent": intent,
                 "disfluencies": disfluencies,
+                "entities": entities,
             }
             out_file.write(json.dumps(row, ensure_ascii=False) + "\n")
             out_file.flush()
