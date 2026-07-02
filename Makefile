@@ -36,8 +36,5 @@ backfill-annotations:
 augment-entities:
 	$(RUN) python scripts/augment_entity_substitution.py
 
-split-disfluency:
-	$(RUN) python scripts/split_disfluency_repair_dataset.py
-
 voice-session:
 	$(RUN) python scripts/run_voice_session.py
