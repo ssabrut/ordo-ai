@@ -11,6 +11,7 @@ from tests.conftest import make_state, MENU_ITEMS
 
 AYAM_BAKAR = MENU_ITEMS[0]
 ES_TEH = MENU_ITEMS[8]
+NASI_GORENG_SPESIAL = MENU_ITEMS[6]
 
 
 # ---------------------------------------------------------------------------
@@ -25,12 +26,15 @@ def _stub_disfluency(state):
     return {"disfluency_tags": ["O"] * len(text.split()), "repaired_text": text}
 
 
-def _make_intent_stub(intent: str, confidence: float = 0.95, probs: dict | None = None):
+def _make_intent_stub(intent, confidence: float = 0.95, probs: dict | None = None):
+    """`intent` may be a single label string or a list of labels (multi-intent)."""
+    intents = [intent] if isinstance(intent, str) else list(intent)
+
     def _stub(state):
         return {
-            "intent": intent,
-            "intent_confidence": confidence,
-            "intent_probs": probs or {intent: confidence},
+            "intents": intents,
+            "intent_confidences": {i: confidence for i in intents},
+            "intent_probs": probs or {i: confidence for i in intents},
         }
     return _stub
 
@@ -108,7 +112,7 @@ class TestGraphOrderAdd:
         assert len(result["cart"]) == 1
         assert result["cart"][0]["name"] == "Ayam Bakar"
         assert "node_timings" in result
-        assert "order_agent" in result["node_timings"]
+        assert "multi_agent_dispatch" in result["node_timings"]
 
     def test_add_with_quantity(self, monkeypatch):
         graph = _patch_graph_nodes(
@@ -291,6 +295,61 @@ class TestGraphConfirmDisambiguation:
 
 
 # ---------------------------------------------------------------------------
+# multi-intent single-utterance flow
+#
+# multi_agent_dispatch (main_graph.py) loops over state["intents"] in
+# prediction order, calling each mapped agent against the running state so
+# add/modify/remove actions from separate intents in one utterance all land.
+# Each agent's _group_entities still applies its single intent uniformly to
+# whatever entities are present when it runs (order_agent.py `for parsed in
+# parsed_items:` loop) — so this test gives each intent its own NER entities
+# by invoking the graph would require per-intent entity slicing, which NER
+# doesn't do. Instead each intent below acts on the entities relevant to it
+# via separate cart starting states / separate entity sets is out of scope;
+# this test exercises two intents (add, cancel) which each operate on the
+# full (small) entity set unambiguously.
+# ---------------------------------------------------------------------------
+class TestGraphMultiIntentUtterance:
+    def test_add_and_cancel_in_one_utterance(self, monkeypatch):
+        graph = _patch_graph_nodes(
+            monkeypatch,
+            ner_entities=[
+                {"text": "es teh manis", "label": "DRINK", "start": 9, "end": 21},
+            ],
+            intent=["order_add_item", "order_cancel"],
+        )
+        cart = [
+            {"menu_id": AYAM_BAKAR["id"], "name": "Ayam Bakar", "price": 30000, "quantity": 1, "notes": []},
+        ]
+        result = _invoke(
+            graph,
+            "tambahin es teh manis, terus batalin semua pesanan",
+            extra_state={"cart": cart},
+        )
+
+        # order_add_item runs first (adds Es Teh Manis to the running cart),
+        # then order_cancel runs second and clears the whole cart — final
+        # state reflects cancel winning since it ran last, per prediction order.
+        assert result["cart"] == []
+        assert "dibatalkan" in result["agent_response"]
+
+    def test_two_intents_merge_agent_responses(self, monkeypatch):
+        graph = _patch_graph_nodes(
+            monkeypatch,
+            ner_entities=[
+                {"text": "ayam bakar", "label": "DISH", "start": 0, "end": 10},
+            ],
+            intent=["order_add_item", "repeat_request"],
+        )
+        result = _invoke(graph, "ayam bakar, terus ulangi pesanan")
+        assert len(result["cart"]) == 1
+        assert result["cart"][0]["name"] == "Ayam Bakar"
+        # dialog_agent's repeat_request response should also be present,
+        # concatenated after order_agent's add-item response
+        assert "Pesanan Anda" in result["agent_response"]
+
+
+# ---------------------------------------------------------------------------
 # node_timings recorded for every node
 # ---------------------------------------------------------------------------
 class TestNodeTimings:
@@ -302,6 +361,6 @@ class TestNodeTimings:
         )
         result = _invoke(graph, "ayam bakar")
         timings = result.get("node_timings", {})
-        for node in ("stt", "normalize", "disfluency", "ner", "intent", "order_agent"):
+        for node in ("stt", "normalize", "disfluency", "ner", "intent", "multi_agent_dispatch"):
             assert node in timings, f"timing missing for {node!r}"
             assert timings[node] >= 0

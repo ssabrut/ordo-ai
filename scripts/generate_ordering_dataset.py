@@ -39,6 +39,8 @@ INTENTS = [
     "ask_recommendation",
     "cancel",
     "complaint",
+    "order_status",
+    "other",
 ]
 
 INTENT_DESCRIPTIONS = {
@@ -54,22 +56,28 @@ INTENT_DESCRIPTIONS = {
     "ask_recommendation": "Asking for a recommendation",
     "cancel": "Cancelling the entire order or part of it",
     "complaint": "Complaining about the food, service, or order",
+    "order_status": "Asking what has been ordered so far in the current session (not asking to repeat it back, just checking the current state)",
+    "other": "Off-topic request unrelated to the order itself — asking for utensils, napkins, water, the bathroom, calling staff over, or unrelated small talk",
 }
 
 # ── disfluency tag mapping ─────────────────────────────────────────────────────
+# fillers/hesitation collapse to IP (interregnum) — both are discourse-filling
+# pauses. repetition/self_correction/change_of_mind/repair all collapse to the
+# RP/RM correction pair (see _split_correction_span below for how a single
+# sampled phrase becomes an RP+RM span or a standalone RM span).
 DISF_TAG_MAP = {
-    "fillers": "FP",       # filler pause
-    "hesitation": "HS",    # hesitation
-    "repetition": "RP",    # repetition
-    "self_correction": "SC",
+    "fillers": "IP",
+    "hesitation": "IP",
+    "repetition": "RP_RM",
+    "self_correction": "RM",
     "false_start": "FS",
     "thinking": "TH",
     "confirmation": "CF",
     "uncertainty": "UC",
-    "change_of_mind": "CM",
-    "repair": "RM",        # repair / reformulation
+    "change_of_mind": "RM",
+    "repair": "RM",
     "politeness": "PL",
-    "spoken_particles": "IP",  # inserted particle
+    "spoken_particles": "SP",
 }
 
 
@@ -107,28 +115,86 @@ def sample_disfluencies(disf: dict, n: int = 2) -> list[tuple[str, str, str]]:
     return result
 
 
-def build_prompt(intent: str, items: dict, disfluency_samples: list[tuple[str, str, str]]) -> str:
+# Intents where forcing a food/drink mention doesn't reflect real usage —
+# "other" is off-topic by definition, "order_status" just checks what's been
+# ordered so far and only optionally names an item.
+_ITEM_OPTIONAL_INTENTS = {"other", "order_status"}
+
+_OTHER_EXAMPLES = (
+    "boleh minta tisu",
+    "permisi mas, sendoknya jatuh",
+    "toiletnya sebelah mana ya",
+    "wah rame banget ya disini",
+    "mbak, tolong panggilin yang lain dong",
+)
+
+# Connectives used to naturally chain multiple intents into one utterance.
+_MULTI_INTENT_CONNECTIVES = (
+    "terus",
+    "habis itu",
+    "sama",
+    "oh iya juga",
+    "terus juga",
+)
+
+
+def _item_rules_for_intent(intent: str, items: dict, step_no: int) -> str:
+    foods_str = ", ".join(items["foods"])
+    drinks_str = ", ".join(items["drinks"])
+
+    if intent in _ITEM_OPTIONAL_INTENTS:
+        if intent == "other":
+            return (
+                f"{step_no}. Do NOT mention any food or drink item — this is an off-topic request "
+                "unrelated to the order itself (e.g. asking for utensils, napkins, water, "
+                "the bathroom, or calling staff over). Examples of the vibe (do not copy):\n"
+                + "\n".join(f"   - {ex}" for ex in _OTHER_EXAMPLES)
+            )
+        return (
+            f"{step_no}. Optionally reference one of these already-ordered items: {foods_str}, {drinks_str}\n"
+            "   The utterance should ask what has been ordered SO FAR (a status check), "
+            "not ask the waiter to repeat the order back."
+        )
+    return (
+        f"{step_no}. Mentions at least one of these food items: {foods_str}\n"
+        f"   Optionally mentions one of these drinks: {drinks_str}\n"
+        f"   Optionally references this modifier: {items['modifier']}"
+    )
+
+
+def build_prompt(intents: list[str], items: dict, disfluency_samples: list[tuple[str, str, str]]) -> str:
     disf_lines = "\n".join(
         f"  - [{tag}] \"{token}\"  ({cat})"
         for cat, tag, token in disfluency_samples
     )
-    foods_str = ", ".join(items["foods"])
-    drinks_str = ", ".join(items["drinks"])
+
+    if len(intents) == 1:
+        intent = intents[0]
+        item_rules_block = _item_rules_for_intent(intent, items, 2)
+        intent_block = f"1. Expresses the intent: **{intent}** — {INTENT_DESCRIPTIONS[intent]}\n{item_rules_block}"
+    else:
+        connective = random.choice(_MULTI_INTENT_CONNECTIVES)
+        intent_lines = "\n".join(
+            f"   {i+1}. **{intent}** — {INTENT_DESCRIPTIONS[intent]}\n"
+            + _item_rules_for_intent(intent, items, f"      {i+1}a")
+            for i, intent in enumerate(intents)
+        )
+        intent_block = (
+            f"1. Expresses ALL of the following intents, IN THIS ORDER, joined naturally using "
+            f"a connective like \"{connective}\" (or a similar one that fits):\n{intent_lines}"
+        )
 
     return f"""You are generating training data for an Indonesian restaurant ordering speech recognition system.
 
 Your task: produce exactly ONE realistic, natural-sounding Indonesian customer utterance that:
-1. Expresses the intent: **{intent}** — {INTENT_DESCRIPTIONS[intent]}
-2. Mentions at least one of these food items: {foods_str}
-3. Optionally mentions one of these drinks: {drinks_str}
-4. Optionally references this modifier: {items["modifier"]}
+{intent_block}
 5. Naturally embeds ALL of the following disfluency tokens (spoken-language imperfections):
 {disf_lines}
 
 Rules:
 - Write in colloquial Indonesian (Bahasa Indonesia sehari-hari), not formal.
 - The utterance must sound like real spontaneous speech — not scripted.
-- Keep it to 1–2 sentences, roughly 10–30 words.
+- Keep it to 1–3 sentences, roughly 10–40 words.
 - Each disfluency token must appear verbatim in the output sentence.
 - Do NOT add any explanation, prefix, or JSON — output ONLY the raw sentence text.
 
@@ -139,9 +205,30 @@ eh bukan, bukan cumi goreng tepung, saya maunya nasi uduk satu ni- nih"""
 def extract_disfluencies_from_text(
     text: str, disfluency_samples: list[tuple[str, str, str]]
 ) -> list[dict]:
-    """Find disfluency tokens in text, return with char offsets."""
+    """Find disfluency tokens in text, return with char offsets.
+
+    Repetition samples ("satu satu") carry the RP_RM sentinel tag and get
+    split into two adjacent single-word spans — first occurrence tagged RP
+    (the repeated/wrong word), second tagged RM (its repair) — since the
+    repeated word IS both the reparandum and its own correction.
+    """
     found = []
     for _, tag, token in disfluency_samples:
+        if tag == "RP_RM":
+            words = token.split()
+            if len(words) == 2:
+                pattern = re.escape(words[0]) + r"\s+" + re.escape(words[1])
+                m = re.search(pattern, text, re.IGNORECASE)
+                if m:
+                    mid = m.start() + len(m.group().split()[0])
+                    found.append({"tag": "RP", "token": m.group().split()[0], "start": m.start(), "end": mid})
+                    second_start = m.group().rindex(words[1], len(words[0])) + m.start()
+                    found.append({"tag": "RM", "token": words[1], "start": second_start, "end": second_start + len(words[1])})
+                continue
+            m = re.search(re.escape(token), text, re.IGNORECASE)
+            if m:
+                found.append({"tag": "RM", "token": m.group(), "start": m.start(), "end": m.end()})
+            continue
         m = re.search(re.escape(token), text, re.IGNORECASE)
         if m:
             found.append({"tag": tag, "token": m.group(), "start": m.start(), "end": m.end()})
@@ -245,11 +332,11 @@ def extract_entities(text: str, ner_vocab: list[tuple[str, str]]) -> list[dict]:
 def generate_utterance(
     model,
     tokenizer,
-    intent: str,
+    intents: list[str],
     items: dict,
     disfluency_samples: list[tuple[str, str, str]],
 ) -> str:
-    user_prompt = build_prompt(intent, items, disfluency_samples)
+    user_prompt = build_prompt(intents, items, disfluency_samples)
     messages = [{"role": "user", "content": user_prompt}]
     prompt_text = tokenizer.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
@@ -289,6 +376,10 @@ def main() -> None:
     parser.add_argument("--append", action="store_true", help="Append to existing file")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility")
     parser.add_argument("--model", type=str, default=DEFAULT_MODEL, help="MLX model path or HF repo")
+    parser.add_argument(
+        "--multi-intent-frac", type=float, default=0.0,
+        help="Fraction of rows that combine 2 (occasionally 3) intents into one utterance",
+    )
     args = parser.parse_args()
 
     if args.seed is not None:
@@ -311,12 +402,16 @@ def main() -> None:
 
     with output_path.open(mode, encoding="utf-8") as out_file:
         for i in range(args.count):
-            intent = random.choice(INTENTS)
+            if random.random() < args.multi_intent_frac:
+                n_intents = random.choices([2, 3], weights=[0.8, 0.2])[0]
+                intents = random.sample(INTENTS, n_intents)
+            else:
+                intents = [random.choice(INTENTS)]
             items = sample_items(fnb)
             disfluency_samples = sample_disfluencies(disf, n=random.randint(1, 3))
 
             try:
-                text = generate_utterance(model, tokenizer, intent, items, disfluency_samples)
+                text = generate_utterance(model, tokenizer, intents, items, disfluency_samples)
             except Exception as exc:
                 print(f"[{i+1}/{args.count}] ERROR: {exc}", file=sys.stderr)
                 errors += 1
@@ -328,7 +423,7 @@ def main() -> None:
             row = {
                 "id": start_id + generated,
                 "text": text,
-                "intent": intent,
+                "intents": intents,
                 "disfluencies": disfluencies,
                 "entities": entities,
             }
@@ -336,7 +431,7 @@ def main() -> None:
             out_file.flush()
             generated += 1
 
-            print(f"[{i+1}/{args.count}] {intent}: {text}")
+            print(f"[{i+1}/{args.count}] {intents}: {text}")
 
     print(f"\nDone. generated={generated} errors={errors} → {output_path}")
 

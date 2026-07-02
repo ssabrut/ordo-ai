@@ -1,5 +1,7 @@
 import time
 import logging
+from pathlib import Path
+
 from langgraph.graph import END, StateGraph
 
 from ordo_ai.nodes import (dialog_agent, disfluency, fallback_agent, intent,
@@ -7,7 +9,16 @@ from ordo_ai.nodes import (dialog_agent, disfluency, fallback_agent, intent,
                            stt)
 from ordo_ai.state.schemas import OrderState
 
+_AGENT_MODULES = {
+    "order_agent": order_agent,
+    "menu_agent": menu_agent,
+    "dialog_agent": dialog_agent,
+    "fallback_agent": fallback_agent,
+}
+
 logger = logging.getLogger(__name__)
+
+_EXPORT_PATH = Path(__file__).resolve().parent.parent.parent.parent / "graph.png"
 
 
 def _timed(name: str, fn):
@@ -21,6 +32,33 @@ def _timed(name: str, fn):
     return wrapper
 
 
+def multi_agent_dispatch(state: OrderState) -> OrderState:
+    """Sequentially run the agent mapped to each predicted intent against the
+    running state, threading cart/pending_item/last_discussed_item mutations
+    from one call into the next and concatenating agent_response. Stops early
+    if an agent sets needs_clarification, pausing any remaining intents.
+    """
+    working_state = dict(state)
+    responses = []
+
+    for current_intent in state["intents"]:
+        agent_name = router.route_to_agent(current_intent)
+        agent_fn = _AGENT_MODULES[agent_name].run
+        working_state["intent"] = current_intent
+
+        result = agent_fn(working_state) or {}
+        working_state.update(result)
+
+        if result.get("agent_response"):
+            responses.append(result["agent_response"])
+
+        if working_state.get("needs_clarification"):
+            break
+
+    working_state["agent_response"] = " ".join(responses)
+    return working_state
+
+
 def build_graph():
     builder = StateGraph(OrderState)
 
@@ -30,10 +68,7 @@ def build_graph():
     builder.add_node("ner", _timed("ner", ner.run))
     builder.add_node("intent", _timed("intent", intent.run))
     builder.add_node("clarify", _timed("clarify", router.clarify))
-    builder.add_node("order_agent", _timed("order_agent", order_agent.run))
-    builder.add_node("menu_agent", _timed("menu_agent", menu_agent.run))
-    builder.add_node("dialog_agent", _timed("dialog_agent", dialog_agent.run))
-    builder.add_node("fallback_agent", _timed("fallback_agent", fallback_agent.run))
+    builder.add_node("multi_agent_dispatch", _timed("multi_agent_dispatch", multi_agent_dispatch))
 
     builder.set_entry_point("stt")
     builder.add_edge("stt", "normalize")
@@ -44,30 +79,35 @@ def build_graph():
     def route_after_intent(state: OrderState) -> str:
         if router.route_on_confidence(state) == "low_confidence":
             return "clarify"
-        return router.route_to_agent(state)
+        return "multi_agent_dispatch"
 
     builder.add_conditional_edges(
         "intent",
         route_after_intent,
         {
             "clarify": "clarify",
-            "order_agent": "order_agent",
-            "menu_agent": "menu_agent",
-            "dialog_agent": "dialog_agent",
-            "fallback_agent": "fallback_agent",
+            "multi_agent_dispatch": "multi_agent_dispatch",
         },
     )
-    builder.add_edge("order_agent", END)
-    builder.add_edge("menu_agent", END)
-    builder.add_edge("dialog_agent", END)
-    builder.add_edge("fallback_agent", END)
+    builder.add_edge("multi_agent_dispatch", END)
     builder.add_edge("clarify", END)
 
     return builder
 
 
+def _export_png(compiled) -> None:
+    try:
+        png_bytes = compiled.get_graph().draw_mermaid_png()
+        _EXPORT_PATH.write_bytes(png_bytes)
+        logger.info("main_graph: exported graph PNG to %r", str(_EXPORT_PATH))
+    except Exception:
+        logger.exception("main_graph: failed to export graph PNG to %r", str(_EXPORT_PATH))
+
+
 def compile_graph(checkpointer=None):
-    return build_graph().compile(checkpointer=checkpointer)
+    compiled = build_graph().compile(checkpointer=checkpointer)
+    _export_png(compiled)
+    return compiled
 
 
 graph = compile_graph()

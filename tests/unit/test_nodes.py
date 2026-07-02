@@ -41,7 +41,7 @@ class TestNormalizeNode:
 # ---------------------------------------------------------------------------
 class TestRouter:
     def _state(self, intent, confidence):
-        return make_state(intent=intent, intent_confidence=confidence)
+        return make_state(intents=[intent], intent_confidences={intent: confidence})
 
     def test_high_confidence_returns_confident(self):
         from ordo_ai.nodes.router import route_on_confidence
@@ -73,7 +73,7 @@ class TestRouter:
     ])
     def test_route_to_agent(self, intent, expected_agent):
         from ordo_ai.nodes.router import route_to_agent
-        assert route_to_agent(self._state(intent, 0.9)) == expected_agent
+        assert route_to_agent(intent) == expected_agent
 
     def test_clarify_sets_needs_clarification(self):
         from ordo_ai.nodes.router import clarify

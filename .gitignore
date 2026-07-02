@@ -219,3 +219,6 @@ __marimo__/
 .streamlit/secrets.toml
 models/
 data/chroma_menu/
+
+# auto-exported on every compile_graph() call
+graph.png

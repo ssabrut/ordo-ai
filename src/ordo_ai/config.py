@@ -8,6 +8,7 @@ class Settings(BaseSettings):
 
     disfluency_model_path: str = "models/indobert-disfluency-bio-final"
     ner_model_path: str = "models/indobert-ner-bio-final"
+    intent_model_path: str = "models/indobert-intent-final"
 
     stt_model_size: str = "large-v3-turbo"
     stt_language: str = "id"
@@ -32,6 +33,9 @@ class Settings(BaseSettings):
     mlflow_s3_endpoint_url: str = "http://localhost:9000"
     aws_access_key_id: str = "minioadmin"
     aws_secret_access_key: str = "minioadmin"
+    mlflow_disfluency_experiment: str = "disfluency-ner"
+    mlflow_ner_experiment: str = "menu-ner"
+    mlflow_intent_experiment: str = "intent-classification"
 
 
 @lru_cache

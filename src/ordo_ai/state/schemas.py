@@ -31,9 +31,10 @@ class OrderState(TypedDict, total=False):
     disfluency_tags: list[str]
     repaired_text: str
     entities: list[EntitySpan]
-    intent: str
-    intent_confidence: float
+    intents: list[str]
+    intent_confidences: dict[str, float]
     intent_probs: dict[str, float]
+    intent: str  # set per-iteration by multi_agent_dispatch; agents read this single field
     needs_clarification: bool
     clarification_message: str
     pending_item: PendingItem

@@ -25,23 +25,26 @@ _INTENT_TO_AGENT: dict[str, AgentName] = {
 
 def route_on_confidence(state: OrderState) -> Literal["confident", "low_confidence"]:
     settings = get_settings()
-    if state["intent_confidence"] >= settings.intent_confidence_threshold:
-        return "confident"
-    return "low_confidence"
+    confidences = state["intent_confidences"]
+    if any(c < settings.intent_confidence_threshold for c in confidences.values()):
+        return "low_confidence"
+    return "confident"
 
 
-def route_to_agent(state: OrderState) -> AgentName:
-    agent = _INTENT_TO_AGENT.get(state["intent"], "fallback_agent")
-    logger.debug("router: intent=%r -> agent=%r", state["intent"], agent)
+def route_to_agent(intent: str) -> AgentName:
+    agent = _INTENT_TO_AGENT.get(intent, "fallback_agent")
+    logger.debug("router: intent=%r -> agent=%r", intent, agent)
     return agent
 
 
 def clarify(state: OrderState) -> OrderState:
+    summary = ", ".join(
+        f"{intent}={conf:.2f}" for intent, conf in state["intent_confidences"].items()
+    )
     result = {
         "needs_clarification": True,
         "clarification_message": (
-            f"Maaf, saya tidak yakin maksud Anda (intent={state['intent']!r}, "
-            f"confidence={state['intent_confidence']:.2f}). Bisa diulang?"
+            f"Maaf, saya tidak yakin maksud Anda ({summary}). Bisa diulang?"
         ),
     }
     logger.debug("clarify: %r", result)

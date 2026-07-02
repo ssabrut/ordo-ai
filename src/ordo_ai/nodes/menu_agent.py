@@ -1,19 +1,27 @@
 import logging
+from functools import lru_cache
 
-from mlx_lm import generate
+from mlx_lm import generate, load
 
-from ordo_ai.nodes.intent import _load as _load_llm
 from ordo_ai.state.schemas import OrderState
 from ordo_ai.tools.cart import add_item
 from ordo_ai.tools.menu import find_menu_item, search_menu, search_menu_semantic
 
 logger = logging.getLogger(__name__)
 
+_MODEL_ID = "mlx-community/Qwen2.5-7B-Instruct-4bit"
+
 _INQUIRY_SYSTEM = (
     "Kamu adalah asisten pemesanan makanan yang ramah dan membantu. "
     "Jawab pertanyaan pelanggan tentang menu dengan bahasa Indonesia yang natural dan hangat. "
     "Fokus pada deskripsi dan bahan-bahan menu. Jangan sebutkan harga. Jawab singkat (1-2 kalimat)."
 )
+
+
+@lru_cache
+def _load_llm():
+    logger.info("menu_agent: loading MLX model %s", _MODEL_ID)
+    return load(_MODEL_ID)
 
 
 def _dish_query(state: OrderState) -> str | None:
