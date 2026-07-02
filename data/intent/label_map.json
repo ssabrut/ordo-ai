@@ -1,0 +1,16 @@
+{
+  "ask_price": 0,
+  "ask_recommendation": 1,
+  "cancel": 2,
+  "complaint": 3,
+  "confirm": 4,
+  "deny": 5,
+  "menu_inquiry": 6,
+  "order_add": 7,
+  "order_modify_quantity": 8,
+  "order_remove_item": 9,
+  "order_status": 10,
+  "order_swap": 11,
+  "other": 12,
+  "repeat_request": 13
+}

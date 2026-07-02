@@ -1,0 +1,11 @@
+{
+  "O": 0,
+  "B-FOOD_ITEM": 1,
+  "I-FOOD_ITEM": 2,
+  "B-DRINK_ITEM": 3,
+  "I-DRINK_ITEM": 4,
+  "B-QUANTITY": 5,
+  "I-QUANTITY": 6,
+  "B-MODIFIER": 7,
+  "I-MODIFIER": 8
+}
