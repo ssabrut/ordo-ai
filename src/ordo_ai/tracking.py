@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import mlflow
 from mlflow.tracking import MlflowClient
@@ -24,6 +25,10 @@ def download_latest_model(experiment_name: str, dest_dir: str) -> str:
     an experiment. Used at process startup to fetch model weights from mlflow
     instead of reading a checked-in local path.
     """
+    cached = Path(dest_dir) / "model"
+    if cached.is_dir() and any(cached.iterdir()):
+        return str(cached)
+
     _configure()
     client = MlflowClient()
     experiment = client.get_experiment_by_name(experiment_name)
