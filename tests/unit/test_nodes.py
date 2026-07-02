@@ -45,30 +45,33 @@ class TestRouter:
 
     def test_high_confidence_returns_confident(self):
         from ordo_ai.nodes.router import route_on_confidence
-        assert route_on_confidence(self._state("order_create", 0.95)) == "confident"
+        assert route_on_confidence(self._state("order_add", 0.95)) == "confident"
 
     def test_low_confidence_returns_low_confidence(self):
         from ordo_ai.nodes.router import route_on_confidence
-        assert route_on_confidence(self._state("order_create", 0.3)) == "low_confidence"
+        assert route_on_confidence(self._state("order_add", 0.3)) == "low_confidence"
 
     def test_exactly_at_threshold_is_confident(self):
         from ordo_ai.nodes.router import route_on_confidence
         from ordo_ai.config import get_settings
         threshold = get_settings().intent_confidence_threshold
-        assert route_on_confidence(self._state("order_create", threshold)) == "confident"
+        assert route_on_confidence(self._state("order_add", threshold)) == "confident"
 
     @pytest.mark.parametrize("intent,expected_agent", [
-        ("order_create", "order_agent"),
-        ("order_add_item", "order_agent"),
+        ("order_add", "order_agent"),
         ("order_remove_item", "order_agent"),
-        ("order_cancel", "order_agent"),
+        ("cancel", "order_agent"),
         ("order_modify_quantity", "order_agent"),
         ("order_swap", "order_agent"),
         ("menu_inquiry", "menu_agent"),
+        ("ask_price", "menu_agent"),
+        ("ask_recommendation", "menu_agent"),
         ("confirm", "dialog_agent"),
         ("deny", "dialog_agent"),
         ("repeat_request", "dialog_agent"),
-        ("chitchat_oos", "fallback_agent"),
+        ("order_status", "dialog_agent"),
+        ("complaint", "fallback_agent"),
+        ("other", "fallback_agent"),
         ("unknown_intent", "fallback_agent"),
     ])
     def test_route_to_agent(self, intent, expected_agent):
@@ -77,7 +80,7 @@ class TestRouter:
 
     def test_clarify_sets_needs_clarification(self):
         from ordo_ai.nodes.router import clarify
-        state = self._state("order_create", 0.4)
+        state = self._state("order_add", 0.4)
         result = clarify(state)
         assert result["needs_clarification"] is True
         assert "clarification_message" in result

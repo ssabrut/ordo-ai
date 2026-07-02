@@ -12,6 +12,7 @@ _RESPONSES = {
     "confirm": "Baik, pesanan dikonfirmasi.",
     "deny": "Baik, pesanan dibatalkan.",
     "repeat_request": "Tentu, saya ulangi pesanan Anda.",
+    "order_status": "Berikut status pesanan Anda.",
 }
 
 _ORDINAL_MAP = {
@@ -51,6 +52,11 @@ def run(state: OrderState) -> OrderState:
 
     if intent == "repeat_request":
         result = {"agent_response": f"{_RESPONSES['repeat_request']} {_format_cart(state.get('cart', []))}"}
+        logger.debug("dialog_agent: result=%r", result)
+        return result
+
+    if intent == "order_status":
+        result = {"agent_response": f"{_RESPONSES['order_status']} {_format_cart(state.get('cart', []))}"}
         logger.debug("dialog_agent: result=%r", result)
         return result
 
@@ -116,7 +122,7 @@ def run(state: OrderState) -> OrderState:
         # simplest: use _parse_quantity on repaired text, let _group_entities handle the rest
         last_qty = 1
         for p in parsed_items:
-            if p["label"] in ("DISH", "DRINK"):
+            if p["label"] in ("FOOD_ITEM", "DRINK_ITEM"):
                 break
             if p["label"] == "QUANTITY":
                 last_qty = p["quantity"]
@@ -127,7 +133,7 @@ def run(state: OrderState) -> OrderState:
 
         # process any explicit DISH entities as additional new items
         for parsed in parsed_items:
-            if parsed["label"] not in ("DISH", "DRINK"):
+            if parsed["label"] not in ("FOOD_ITEM", "DRINK_ITEM"):
                 continue
             candidates = find_menu_items(parsed["name"])
             if not candidates:

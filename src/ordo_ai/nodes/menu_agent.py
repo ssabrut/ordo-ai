@@ -4,7 +4,6 @@ from functools import lru_cache
 from mlx_lm import generate, load
 
 from ordo_ai.state.schemas import OrderState
-from ordo_ai.tools.cart import add_item
 from ordo_ai.tools.menu import find_menu_item, search_menu, search_menu_semantic
 
 logger = logging.getLogger(__name__)
@@ -26,7 +25,7 @@ def _load_llm():
 
 def _dish_query(state: OrderState) -> str | None:
     for ent in state.get("entities", []):
-        if ent["label"] in ("DISH", "DRINK"):
+        if ent["label"] in ("FOOD_ITEM", "DRINK_ITEM"):
             return ent["text"]
     return None
 
@@ -48,7 +47,7 @@ def _llm_inquiry_response(user_question: str, items: list[dict]) -> str:
 
 def run(state: OrderState) -> OrderState:
     query = _dish_query(state)
-    is_inquiry = state.get("intent") == "menu_inquiry"
+    is_inquiry = state.get("intent") in ("menu_inquiry", "ask_recommendation")
 
     if query:
         menu_item = find_menu_item(query)
@@ -76,11 +75,7 @@ def run(state: OrderState) -> OrderState:
             f"{item['name']} - Rp{item['price']:,}".replace(",", ".") for item in results
         ]
         response = "Berikut menu yang tersedia: " + "; ".join(lines)
-        if menu_item:
-            cart, message = add_item(state.get("cart", []), menu_item)
-            result = {"cart": cart, "agent_response": f"{response} {message}"}
-        else:
-            result = {"agent_response": response}
+        result = {"agent_response": response}
 
     logger.debug("menu_agent: result=%r", result)
     return result

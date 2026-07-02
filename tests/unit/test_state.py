@@ -15,10 +15,10 @@ class TestOrderAgentAdd:
     def test_add_single_dish(self, mock_menu):
         from ordo_ai.nodes.order_agent import run
         state = make_state(
-            intent="order_add_item",
+            intent="order_add",
             intent_confidence=0.95,
             repaired_text="tambah ayam bakar",
-            entities=[{"text": "ayam bakar", "label": "DISH", "start": 7, "end": 17}],
+            entities=[{"text": "ayam bakar", "label": "FOOD_ITEM", "start": 7, "end": 17}],
         )
         result = run(state)
         assert len(result["cart"]) == 1
@@ -28,12 +28,12 @@ class TestOrderAgentAdd:
     def test_add_with_quantity(self, mock_menu):
         from ordo_ai.nodes.order_agent import run
         state = make_state(
-            intent="order_add_item",
+            intent="order_add",
             intent_confidence=0.95,
             repaired_text="pesan dua ayam bakar",
             entities=[
                 {"text": "dua", "label": "QUANTITY", "start": 6, "end": 9},
-                {"text": "ayam bakar", "label": "DISH", "start": 10, "end": 20},
+                {"text": "ayam bakar", "label": "FOOD_ITEM", "start": 10, "end": 20},
             ],
         )
         result = run(state)
@@ -42,10 +42,10 @@ class TestOrderAgentAdd:
     def test_add_unknown_item(self, mock_menu):
         from ordo_ai.nodes.order_agent import run
         state = make_state(
-            intent="order_add_item",
+            intent="order_add",
             intent_confidence=0.95,
             repaired_text="pesan pizza",
-            entities=[{"text": "pizza", "label": "DISH", "start": 6, "end": 11}],
+            entities=[{"text": "pizza", "label": "FOOD_ITEM", "start": 6, "end": 11}],
         )
         result = run(state)
         assert result["cart"] == []
@@ -55,10 +55,10 @@ class TestOrderAgentAdd:
         from ordo_ai.nodes.order_agent import run
         # "nasi goreng" matches multiple candidates
         state = make_state(
-            intent="order_add_item",
+            intent="order_add",
             intent_confidence=0.95,
             repaired_text="pesan nasi goreng",
-            entities=[{"text": "nasi goreng", "label": "DISH", "start": 6, "end": 17}],
+            entities=[{"text": "nasi goreng", "label": "FOOD_ITEM", "start": 6, "end": 17}],
         )
         result = run(state)
         assert result.get("needs_clarification") is True
@@ -69,10 +69,10 @@ class TestOrderAgentAdd:
         from ordo_ai.nodes.order_agent import run
         existing_cart = [{"menu_id": AYAM_BAKAR["id"], "name": "Ayam Bakar", "price": 30000, "quantity": 1, "notes": []}]
         state = make_state(
-            intent="order_add_item",
+            intent="order_add",
             intent_confidence=0.95,
             repaired_text="tambah lagi ayam bakar",
-            entities=[{"text": "ayam bakar", "label": "DISH", "start": 12, "end": 22}],
+            entities=[{"text": "ayam bakar", "label": "FOOD_ITEM", "start": 12, "end": 22}],
             cart=existing_cart,
         )
         result = run(state)
@@ -88,7 +88,7 @@ class TestOrderAgentRemove:
             intent="order_remove_item",
             intent_confidence=0.95,
             repaired_text="hapus ayam bakar",
-            entities=[{"text": "ayam bakar", "label": "DISH", "start": 6, "end": 16}],
+            entities=[{"text": "ayam bakar", "label": "FOOD_ITEM", "start": 6, "end": 16}],
             cart=cart,
         )
         result = run(state)
@@ -101,7 +101,7 @@ class TestOrderAgentRemove:
             intent="order_remove_item",
             intent_confidence=0.95,
             repaired_text="hapus es teh",
-            entities=[{"text": "es teh", "label": "DISH", "start": 6, "end": 12}],
+            entities=[{"text": "es teh", "label": "FOOD_ITEM", "start": 6, "end": 12}],
             cart=[],
         )
         result = run(state)
@@ -113,7 +113,7 @@ class TestOrderAgentCancel:
         from ordo_ai.nodes.order_agent import run
         cart = [{"menu_id": AYAM_BAKAR["id"], "name": "Ayam Bakar", "price": 30000, "quantity": 2, "notes": []}]
         state = make_state(
-            intent="order_cancel",
+            intent="cancel",
             intent_confidence=0.95,
             repaired_text="batalkan pesanan",
             entities=[],
@@ -134,7 +134,7 @@ class TestOrderAgentModifyQuantity:
             repaired_text="ubah ayam bakar jadi tiga",
             entities=[
                 {"text": "tiga", "label": "QUANTITY", "start": 21, "end": 25},
-                {"text": "ayam bakar", "label": "DISH", "start": 5, "end": 15},
+                {"text": "ayam bakar", "label": "FOOD_ITEM", "start": 5, "end": 15},
             ],
             cart=cart,
         )
@@ -151,8 +151,8 @@ class TestOrderAgentSwap:
             intent_confidence=0.95,
             repaired_text="ganti ayam bakar dengan es teh manis",
             entities=[
-                {"text": "ayam bakar", "label": "DISH", "start": 6, "end": 16},
-                {"text": "es teh manis", "label": "DRINK", "start": 25, "end": 37},
+                {"text": "ayam bakar", "label": "FOOD_ITEM", "start": 6, "end": 16},
+                {"text": "es teh manis", "label": "DRINK_ITEM", "start": 25, "end": 37},
             ],
             cart=cart,
         )
@@ -168,7 +168,7 @@ class TestOrderAgentSwap:
             intent="order_swap",
             intent_confidence=0.95,
             repaired_text="ganti ayam bakar",
-            entities=[{"text": "ayam bakar", "label": "DISH", "start": 6, "end": 16}],
+            entities=[{"text": "ayam bakar", "label": "FOOD_ITEM", "start": 6, "end": 16}],
             cart=cart,
         )
         result = run(state)
@@ -179,7 +179,7 @@ class TestOrderAgentLastDiscussed:
     def test_consumes_last_discussed_on_itu(self, mock_menu):
         from ordo_ai.nodes.order_agent import run
         state = make_state(
-            intent="order_add_item",
+            intent="order_add",
             intent_confidence=0.95,
             repaired_text="itu satu",
             entities=[{"text": "satu", "label": "QUANTITY", "start": 4, "end": 8}],
@@ -192,10 +192,10 @@ class TestOrderAgentLastDiscussed:
     def test_no_consume_without_reference_word(self, mock_menu):
         from ordo_ai.nodes.order_agent import run
         state = make_state(
-            intent="order_add_item",
+            intent="order_add",
             intent_confidence=0.95,
             repaired_text="tambah mie ayam bakso",
-            entities=[{"text": "mie ayam bakso", "label": "DISH", "start": 7, "end": 21}],
+            entities=[{"text": "mie ayam bakso", "label": "FOOD_ITEM", "start": 7, "end": 21}],
             last_discussed_item=AYAM_BAKAR,
         )
         result = run(state)
@@ -213,7 +213,7 @@ class TestOrderAgentResolvePending:
             intent="confirm",
             intent_confidence=0.9,
             repaired_text="yang spesial",
-            entities=[{"text": "spesial", "label": "DISH", "start": 5, "end": 12}],
+            entities=[{"text": "spesial", "label": "FOOD_ITEM", "start": 5, "end": 12}],
             needs_clarification=True,
             pending_item=pending,
         )

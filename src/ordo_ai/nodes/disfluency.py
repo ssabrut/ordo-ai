@@ -90,17 +90,13 @@ def predict_disfluency(text: str) -> dict:
 
 
 def repair(text: str) -> str:
-    """Delete IP/RP/FS spans; for RC (repeat), drop the first occurrence and
-    keep the second as the fluent surface form. RM (repair) is left untouched.
-    """
+    """Delete IP/RP/FS spans. RM/TH/CF/UC/PL/SP are left untouched."""
     result = predict_disfluency(text)
     tokens, spans = result["tokens"], result["spans"]
     drop_indices = set()
     for span in spans:
         if span["label"] in DELETE_TAGS:
             drop_indices.update(range(span["start"], span["end"]))
-        elif span["label"] == "RC":
-            drop_indices.update(range(span["start"], span["end"] - 1))
     kept = [tok for idx, tok in enumerate(tokens) if idx not in drop_indices]
     return " ".join(kept)
 

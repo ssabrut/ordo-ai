@@ -28,12 +28,12 @@ def _parse_quantity(text: str) -> int:
 
 
 def _group_entities(entities: list[EntitySpan]) -> list[dict]:
-    """Attach each DISH/DRINK/REMOVE span to its nearest QUANTITY/MODIFIER spans (qty
+    """Attach each FOOD_ITEM/DRINK_ITEM span to its nearest QUANTITY/MODIFIER spans (qty
     can precede, e.g. "dua nasi goreng", or follow, e.g. "nasi goreng dua porsi").
     """
     spans = sorted(entities, key=lambda e: e["start"])
     anchors = [
-        i for i, e in enumerate(spans) if e["label"] in ("DISH", "DRINK", "REMOVE")
+        i for i, e in enumerate(spans) if e["label"] in ("FOOD_ITEM", "DRINK_ITEM")
     ]
     if not anchors:
         return []
@@ -49,7 +49,7 @@ def _group_entities(entities: list[EntitySpan]) -> list[dict]:
     ]
 
     for i, ent in enumerate(spans):
-        if ent["label"] not in ("QUANTITY", "MODIFIER", "ADD_ON", "SIZE"):
+        if ent["label"] not in ("QUANTITY", "MODIFIER"):
             continue
         nearest = min(range(len(anchors)), key=lambda k: abs(anchors[k] - i))
         if ent["label"] == "QUANTITY":
@@ -71,7 +71,7 @@ def _resolve_pending(state: OrderState) -> OrderState | None:
 
     # try entity match first
     for ent in state.get("entities", []):
-        if ent["label"] in ("DISH", "DRINK"):
+        if ent["label"] in ("FOOD_ITEM", "DRINK_ITEM"):
             lower = ent["text"].lower()
             for i, c in enumerate(candidates):
                 if lower in c["name"].lower() or c["name"].lower() in lower:
@@ -97,16 +97,16 @@ def _consume_last_discussed(state: OrderState, cart: list, responses: list) -> d
     if not any(ref in repaired for ref in ("itu", "ini", "boleh", "oke", "mau itu")):
         return None
 
-    # find first QUANTITY entity not preceded by a DISH entity
+    # find first QUANTITY entity not preceded by a FOOD_ITEM/DRINK_ITEM entity
     spans = sorted(state.get("entities", []), key=lambda e: e["start"])
     qty = 1
     notes = []
     for ent in spans:
-        if ent["label"] in ("DISH", "DRINK"):
+        if ent["label"] in ("FOOD_ITEM", "DRINK_ITEM"):
             break
         if ent["label"] == "QUANTITY":
             qty = _parse_quantity(ent["text"])
-        elif ent["label"] in ("MODIFIER", "ADD_ON", "SIZE"):
+        elif ent["label"] == "MODIFIER":
             notes.append(ent["text"])
 
     new_cart, message = add_item(cart, last_item, qty, notes)
@@ -134,7 +134,7 @@ def run(state: OrderState) -> OrderState:
     if consumed is not None:
         extra.update(consumed)
 
-    if intent == "order_cancel":
+    if intent == "cancel":
         cart = []
         result = {"cart": cart, "agent_response": "Pesanan dibatalkan."}
         logger.debug("order_agent: result=%r", result)
@@ -204,7 +204,7 @@ def run(state: OrderState) -> OrderState:
         return result
 
     for parsed in parsed_items:
-        if intent == "order_remove_item" or parsed["label"] == "REMOVE":
+        if intent == "order_remove_item":
             idx = find_cart_index_fuzzy(cart, parsed["name"])
             if idx is not None:
                 removed_name = cart[idx]["name"]

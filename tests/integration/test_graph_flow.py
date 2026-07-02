@@ -78,7 +78,7 @@ class TestGraphRoutingLowConfidence:
         graph = _patch_graph_nodes(
             monkeypatch,
             ner_entities=[],
-            intent="order_create",
+            intent="order_add",
             confidence=0.2,
         )
         result = _invoke(graph, "mau pesan sesuatu")
@@ -90,8 +90,8 @@ class TestGraphRoutingLowConfidence:
         threshold = get_settings().intent_confidence_threshold
         graph = _patch_graph_nodes(
             monkeypatch,
-            ner_entities=[{"text": "ayam bakar", "label": "DISH", "start": 0, "end": 10}],
-            intent="order_add_item",
+            ner_entities=[{"text": "ayam bakar", "label": "FOOD_ITEM", "start": 0, "end": 10}],
+            intent="order_add",
             confidence=threshold,
         )
         result = _invoke(graph, "pesan ayam bakar")
@@ -99,14 +99,14 @@ class TestGraphRoutingLowConfidence:
 
 
 # ---------------------------------------------------------------------------
-# order_add_item flow
+# order_add flow
 # ---------------------------------------------------------------------------
 class TestGraphOrderAdd:
     def test_add_single_item_end_to_end(self, monkeypatch):
         graph = _patch_graph_nodes(
             monkeypatch,
-            ner_entities=[{"text": "ayam bakar", "label": "DISH", "start": 6, "end": 16}],
-            intent="order_add_item",
+            ner_entities=[{"text": "ayam bakar", "label": "FOOD_ITEM", "start": 6, "end": 16}],
+            intent="order_add",
         )
         result = _invoke(graph, "pesan ayam bakar")
         assert len(result["cart"]) == 1
@@ -119,9 +119,9 @@ class TestGraphOrderAdd:
             monkeypatch,
             ner_entities=[
                 {"text": "tiga", "label": "QUANTITY", "start": 0, "end": 4},
-                {"text": "ayam bakar", "label": "DISH", "start": 5, "end": 15},
+                {"text": "ayam bakar", "label": "FOOD_ITEM", "start": 5, "end": 15},
             ],
-            intent="order_add_item",
+            intent="order_add",
         )
         result = _invoke(graph, "tiga ayam bakar")
         assert result["cart"][0]["quantity"] == 3
@@ -130,10 +130,10 @@ class TestGraphOrderAdd:
         graph = _patch_graph_nodes(
             monkeypatch,
             ner_entities=[
-                {"text": "ayam bakar", "label": "DISH", "start": 0, "end": 10},
-                {"text": "es teh manis", "label": "DRINK", "start": 14, "end": 26},
+                {"text": "ayam bakar", "label": "FOOD_ITEM", "start": 0, "end": 10},
+                {"text": "es teh manis", "label": "DRINK_ITEM", "start": 14, "end": 26},
             ],
-            intent="order_add_item",
+            intent="order_add",
         )
         result = _invoke(graph, "ayam bakar dan es teh manis")
         names = {i["name"] for i in result["cart"]}
@@ -143,8 +143,8 @@ class TestGraphOrderAdd:
     def test_add_unknown_item_gives_response(self, monkeypatch):
         graph = _patch_graph_nodes(
             monkeypatch,
-            ner_entities=[{"text": "soto betawi", "label": "DISH", "start": 0, "end": 11}],
-            intent="order_add_item",
+            ner_entities=[{"text": "soto betawi", "label": "FOOD_ITEM", "start": 0, "end": 11}],
+            intent="order_add",
         )
         result = _invoke(graph, "soto betawi")
         assert result["cart"] == []
@@ -153,8 +153,8 @@ class TestGraphOrderAdd:
     def test_ambiguous_item_sets_pending(self, monkeypatch):
         graph = _patch_graph_nodes(
             monkeypatch,
-            ner_entities=[{"text": "nasi goreng", "label": "DISH", "start": 0, "end": 11}],
-            intent="order_add_item",
+            ner_entities=[{"text": "nasi goreng", "label": "FOOD_ITEM", "start": 0, "end": 11}],
+            intent="order_add",
         )
         result = _invoke(graph, "nasi goreng")
         assert result.get("needs_clarification") is True
@@ -163,14 +163,14 @@ class TestGraphOrderAdd:
 
 
 # ---------------------------------------------------------------------------
-# order_cancel flow
+# cancel flow
 # ---------------------------------------------------------------------------
 class TestGraphOrderCancel:
     def test_cancel_clears_cart(self, monkeypatch):
         graph = _patch_graph_nodes(
             monkeypatch,
             ner_entities=[],
-            intent="order_cancel",
+            intent="cancel",
         )
         cart = [{"menu_id": AYAM_BAKAR["id"], "name": "Ayam Bakar", "price": 30000, "quantity": 1, "notes": []}]
         result = _invoke(graph, "batalkan pesanan", extra_state={"cart": cart})
@@ -184,7 +184,7 @@ class TestGraphOrderRemove:
     def test_remove_item(self, monkeypatch):
         graph = _patch_graph_nodes(
             monkeypatch,
-            ner_entities=[{"text": "ayam bakar", "label": "DISH", "start": 6, "end": 16}],
+            ner_entities=[{"text": "ayam bakar", "label": "FOOD_ITEM", "start": 6, "end": 16}],
             intent="order_remove_item",
         )
         cart = [{"menu_id": AYAM_BAKAR["id"], "name": "Ayam Bakar", "price": 30000, "quantity": 2, "notes": []}]
@@ -224,7 +224,7 @@ class TestGraphFallback:
         graph = _patch_graph_nodes(
             monkeypatch,
             ner_entities=[],
-            intent="chitchat_oos",
+            intent="other",
         )
         result = _invoke(graph, "apa kabar hari ini")
         assert result.get("agent_response") is not None
@@ -314,9 +314,9 @@ class TestGraphMultiIntentUtterance:
         graph = _patch_graph_nodes(
             monkeypatch,
             ner_entities=[
-                {"text": "es teh manis", "label": "DRINK", "start": 9, "end": 21},
+                {"text": "es teh manis", "label": "DRINK_ITEM", "start": 9, "end": 21},
             ],
-            intent=["order_add_item", "order_cancel"],
+            intent=["order_add", "cancel"],
         )
         cart = [
             {"menu_id": AYAM_BAKAR["id"], "name": "Ayam Bakar", "price": 30000, "quantity": 1, "notes": []},
@@ -327,8 +327,8 @@ class TestGraphMultiIntentUtterance:
             extra_state={"cart": cart},
         )
 
-        # order_add_item runs first (adds Es Teh Manis to the running cart),
-        # then order_cancel runs second and clears the whole cart — final
+        # order_add runs first (adds Es Teh Manis to the running cart),
+        # then cancel runs second and clears the whole cart — final
         # state reflects cancel winning since it ran last, per prediction order.
         assert result["cart"] == []
         assert "dibatalkan" in result["agent_response"]
@@ -337,9 +337,9 @@ class TestGraphMultiIntentUtterance:
         graph = _patch_graph_nodes(
             monkeypatch,
             ner_entities=[
-                {"text": "ayam bakar", "label": "DISH", "start": 0, "end": 10},
+                {"text": "ayam bakar", "label": "FOOD_ITEM", "start": 0, "end": 10},
             ],
-            intent=["order_add_item", "repeat_request"],
+            intent=["order_add", "repeat_request"],
         )
         result = _invoke(graph, "ayam bakar, terus ulangi pesanan")
         assert len(result["cart"]) == 1
@@ -356,8 +356,8 @@ class TestNodeTimings:
     def test_timings_recorded_for_pipeline_nodes(self, monkeypatch):
         graph = _patch_graph_nodes(
             monkeypatch,
-            ner_entities=[{"text": "ayam bakar", "label": "DISH", "start": 0, "end": 10}],
-            intent="order_add_item",
+            ner_entities=[{"text": "ayam bakar", "label": "FOOD_ITEM", "start": 0, "end": 10}],
+            intent="order_add",
         )
         result = _invoke(graph, "ayam bakar")
         timings = result.get("node_timings", {})

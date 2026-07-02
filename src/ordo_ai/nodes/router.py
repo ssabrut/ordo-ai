@@ -9,17 +9,20 @@ logger = logging.getLogger(__name__)
 AgentName = Literal["order_agent", "menu_agent", "dialog_agent", "fallback_agent"]
 
 _INTENT_TO_AGENT: dict[str, AgentName] = {
-    "order_create": "order_agent",
-    "order_add_item": "order_agent",
+    "order_add": "order_agent",
     "order_remove_item": "order_agent",
-    "order_cancel": "order_agent",
+    "cancel": "order_agent",
     "order_modify_quantity": "order_agent",
     "order_swap": "order_agent",
     "menu_inquiry": "menu_agent",
+    "ask_price": "menu_agent",
+    "ask_recommendation": "menu_agent",
     "confirm": "dialog_agent",
     "deny": "dialog_agent",
     "repeat_request": "dialog_agent",
-    "chitchat_oos": "fallback_agent",
+    "order_status": "dialog_agent",
+    "complaint": "fallback_agent",
+    "other": "fallback_agent",
 }
 
 
