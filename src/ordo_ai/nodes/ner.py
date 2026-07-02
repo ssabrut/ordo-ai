@@ -10,12 +10,21 @@ from ordo_ai.state.schemas import EntitySpan, OrderState
 
 logger = logging.getLogger(__name__)
 
+_model_path: str | None = None
+
+
+def set_model_path(path: str) -> None:
+    """Override the model path (e.g. after downloading from mlflow at startup)."""
+    global _model_path
+    _model_path = path
+    _load.cache_clear()
+
 
 @lru_cache
 def _load():
-    settings = get_settings()
-    tokenizer = AutoTokenizer.from_pretrained(settings.ner_model_path)
-    model = BertCrfForTokenClassification.from_pretrained(settings.ner_model_path)
+    path = _model_path or get_settings().ner_model_path
+    tokenizer = AutoTokenizer.from_pretrained(path)
+    model = BertCrfForTokenClassification.from_pretrained(path)
     model.eval()
     return tokenizer, model
 
