@@ -172,6 +172,38 @@ _QUANTITY_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Adjectives that map to an actual fnb_bank modifier dimension (spiciness,
+# sweetness, temperature, salt). Freeform intensifier phrasing around these
+# ("pedas banget", "kurang manis") describes a real order modifier even
+# though it doesn't match a literal fnb_bank phrase. Excludes generic
+# quality-judgment words (enak, bau, lama) that show up in complaints but
+# aren't orderable modifiers.
+_MODIFIER_ADJ = {"pedas", "manis", "asin", "asem", "gurih", "encer", "dingin", "panas", "garam", "minyak"}
+_INTENSIFIER_RE = re.compile(
+    r"\b(?:agak|kurang|sedikit)\s+(?:" + "|".join(_MODIFIER_ADJ) + r")\b"
+    r"|\b(?:" + "|".join(_MODIFIER_ADJ) + r")\s+(?:banget|dikit|sekali)\b",
+    re.IGNORECASE,
+)
+
+# Open-vocabulary ingredient/condiment references ("kecap dikit", "sambal
+# banyak") aren't in fnb_bank at all, so they can't be caught by a fixed
+# attribute whitelist like _MODIFIER_ADJ. Instead, match <word> immediately
+# followed by a portion-intensity word (dikit/banyak/sedikit), excluding
+# function words/particles/verbs that also precede these words in casual
+# speech ("minta dikit", "aja dikit", "kok dikit") and would otherwise
+# false-positive as MODIFIER spans.
+_INTENSITY_STOPWORDS = {
+    "aja", "kok", "minta", "pesen", "pesan", "yang", "itu", "ini", "ya",
+    "dong", "deh", "nih", "sih", "gitu", "mau", "mo", "tolong", "boleh",
+    "sama", "juga", "buat", "untuk", "tadi", "dan", "atau", "sini", "situ",
+    "dikasih", "diberi", "dikasi", "terlalu", "kasih", "kasi", "bisa",
+    "kalo", "kalau", "nya",
+}
+_INGREDIENT_INTENSITY_RE = re.compile(
+    r"\b(?!(?:" + "|".join(_INTENSITY_STOPWORDS) + r")\b)(\w+)\s+(?:dikit|banyak|sedikit)\b",
+    re.IGNORECASE,
+)
+
 
 def extract_entities(text: str, ner_vocab: list[tuple[str, str]]) -> list[dict]:
     """String-match NER entities; return non-overlapping spans sorted by start offset."""
@@ -187,6 +219,18 @@ def extract_entities(text: str, ner_vocab: list[tuple[str, str]]) -> list[dict]:
             if not _overlaps(m.start(), m.end()):
                 entities.append({"label": label, "token": m.group(), "start": m.start(), "end": m.end()})
                 covered.append((m.start(), m.end()))
+
+    # freeform intensifier + modifier-attribute phrasing (e.g. "pedas banget")
+    for m in _INTENSIFIER_RE.finditer(text):
+        if not _overlaps(m.start(), m.end()):
+            entities.append({"label": "MODIFIER", "token": m.group(), "start": m.start(), "end": m.end()})
+            covered.append((m.start(), m.end()))
+
+    # open-vocabulary ingredient + portion-intensity phrasing (e.g. "kecap dikit")
+    for m in _INGREDIENT_INTENSITY_RE.finditer(text):
+        if not _overlaps(m.start(), m.end()):
+            entities.append({"label": "MODIFIER", "token": m.group(), "start": m.start(), "end": m.end()})
+            covered.append((m.start(), m.end()))
 
     # quantities
     for m in _QUANTITY_RE.finditer(text):
